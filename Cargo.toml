@@ -1,0 +1,8 @@
+[package]
+name = "skoll"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+smithay-client-toolkit = "0.16" # Client-side Wayland toolkit
+wayland-client = "0.30"         # Core Wayland client library
