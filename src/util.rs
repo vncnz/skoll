@@ -52,6 +52,15 @@ pub fn load_css() {
             &provider,
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
+        /* let provider2 = CssProvider::new();
+        provider2.load_from_data(
+            b"window { background-color: rgba(120, 0, 0, 0.6); }"
+        ).expect("Failed to load CSS");
+        gtk::StyleContext::add_provider_for_screen(
+            &gdk::Screen::default().expect("Error initializing gtk css provider2."),
+            &provider2,
+            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+        ); */
     }
 }
 
@@ -115,7 +124,7 @@ pub fn launch_app(info: &AppInfo, term_command: Option<&str>, launch_cgroups: bo
             .unwrap()
             .stdout;
         let unit = format!(
-            "--unit=app-sirula-{}-{}",
+            "--unit=app-skoll-{}-{}",
             String::from_utf8_lossy(&parsed).trim(),
             id()
         );

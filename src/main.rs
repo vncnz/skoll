@@ -19,9 +19,7 @@ use fuzzy_matcher::skim::SkimMatcherV2;
 use gdk::keys::constants;
 use gio::prelude::*;
 use gtk::{
-    builders::{BoxBuilder, EntryBuilder, ListBoxBuilder, ScrolledWindowBuilder},
-    prelude::*,
-    ListBoxRow,
+    builders::{BoxBuilder, EntryBuilder, ListBoxBuilder, ScrolledWindowBuilder}, prelude::*, ListBoxRow
 };
 use libc::LC_ALL;
 use std::env::args;
@@ -45,7 +43,61 @@ use locale::*;
 mod history;
 use history::*;
 
+use std::process::Command;
+use serde_derive::Deserialize;
+// use std::error::Error;
+use serde_json;
+
+#[derive(Deserialize)]
+struct NiriWindow {
+    id: u32,
+    title: Option<String>,
+    app_id: Option<String>,
+    workspace_id: Option<u8>,
+    is_focused: bool
+}
+
+#[derive(Deserialize)]
+struct NiriWorkspace {
+    id: u32,
+    idx: u32,
+    name: Option<String>,
+    output: String,
+    is_active: bool,
+    is_focused: bool,
+    active_window_id: Option<u32>
+}
+
 fn app_startup(application: &gtk::Application) {
+
+    let windows: Vec<NiriWindow>;
+    {
+        let output = Command::new("niri").arg("msg").arg("-j").arg("windows").output();
+        let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
+        windows = serde_json::from_str(&stdout).unwrap();
+    }
+    let workspaces: Vec<NiriWorkspace>;
+    let workspaces_map: HashMap<u32, NiriWorkspace>;
+    {
+        let output = Command::new("niri").arg("msg").arg("-j").arg("workspaces").output();
+        let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
+        println!("{:?}", stdout);
+        workspaces = serde_json::from_str(&stdout).unwrap();
+        workspaces_map = workspaces.into_iter().map(|ws| (ws.id, ws)).collect();
+    }
+
+    // Stampa le finestre
+    println!("Finestre aperte:");
+    for window in windows {
+        println!(
+            "ID: {}, Titolo: {}, App ID: {}",
+            window.id,
+            window.title.clone().unwrap_or_else(|| "N/A".to_string()),
+            window.app_id.clone().unwrap_or_else(|| "N/A".to_string())
+        );
+    }
+
+
     let config = Config::load();
     let launch_cgroups = config.cgroups;
     let cmd_prefix = config.command_prefix.clone();
@@ -93,6 +145,20 @@ fn app_startup(application: &gtk::Application) {
 
     let history = Rc::new(RefCell::new(load_history(config.prune_history)));
     let entries = Rc::new(RefCell::new(load_entries(&config, &history.borrow())));
+
+    /* for win in windows {
+        let hbox = BoxBuilder::new()
+            .orientation(Orientation::Horizontal)
+            .build();
+        hbox.pack_start(&image, false, false, 0);
+        hbox.pack_end(&label, true, true, 0);
+
+        let row = ListBoxRow::new();
+        row.add(&hbox);
+        row.style_context().add_class(APP_ROW_CLASS);
+
+        listbox.add(win);
+    } */
 
     for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
         listbox.add(row);
