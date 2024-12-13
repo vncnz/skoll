@@ -33,6 +33,8 @@ use std::collections::HashMap;
 use super::{consts::*, Config, Field, HistoryData};
 use regex::RegexSet;
 
+use crate::niri;
+
 #[derive(Eq)]
 pub struct AppEntry {
     pub display_string: String,
@@ -146,6 +148,155 @@ fn add_attrs(list: &AttrList, attrs: &Vec<Attribute>, start: u32, end: u32) {
         attr.set_end_index(end);
         list.insert(attr);
     }
+}
+
+fn find_app_by_id(app_id: &str) -> Option<AppInfo> {
+    // Itera su tutte le applicazioni registrate
+    for app_info in gio::AppInfo::all() {
+        if let Some(id) = get_app_field(&app_info, Field::Id) {
+            if id == app_id {
+                return Some(app_info);
+            }
+        }
+    }
+    None
+}
+
+pub fn load_entries_running(
+    config: &Config,
+    windows: Vec<niri::NiriWindow>
+) -> HashMap<ListBoxRow, AppEntry> {
+    let mut entries = HashMap::new();
+    let icon_theme = IconTheme::default().unwrap();
+
+    for window in windows {
+        println!(
+            "ID: {}, Titolo: {}, App ID: {}",
+            window.id,
+            window.title.clone().unwrap_or_else(|| "N/A".to_string()),
+            window.app_id.clone().unwrap_or_else(|| "N/A".to_string())
+        );
+
+
+        let name = window.title.unwrap();
+        let app: AppInfo = find_app_by_id(&window.app_id.unwrap()).unwrap();
+
+        let id = match app.id() {
+            Some(id) => id.to_string(),
+            _ => continue,
+        };
+
+        /* if exclude.is_match(&id) {
+            continue;
+        } */
+
+        let (display_string, extra_range) = if let Some(name) =
+            get_app_field(&app, Field::Id).and_then(|id| config.name_overrides.get(&id))
+        {
+            let i = name.find('\r');
+            (
+                name.replace('\r', " "),
+                i.map(|i| (i as u32 + 1, name.len() as u32)),
+            )
+        } else {
+            let extra = config
+                .extra_field
+                .get(0)
+                .and_then(|f| get_app_field(&app, *f));
+            match extra {
+                Some(e)
+                    if (!config.hide_extra_if_contained
+                        || !name.to_lowercase().contains(&e.to_lowercase())) =>
+                {
+                    (
+                        format!("{}{}{}",
+                            name,
+                            if config.extra_field_newline {"\n"} else {" "},
+                            e
+                        ),
+                        Some((
+                            name.len() as u32 + 1,
+                            name.len() as u32 + 1 + e.len() as u32,
+                        )),
+                    )
+                }
+                _ => (name, None),
+            }
+        };
+
+        let hidden = config
+            .hidden_fields
+            .iter()
+            .map(|f| get_app_field(&app, *f).unwrap_or_default())
+            .collect::<Vec<String>>()
+            .join(" ");
+
+        let search_string = if hidden.is_empty() {
+            display_string.clone()
+        } else {
+            format!("{} {}", display_string, hidden)
+        };
+
+        let label = LabelBuilder::new()
+            .xalign(0.0f32)
+            .label(&display_string)
+            .wrap(true)
+            .ellipsize(EllipsizeMode::End)
+            .lines(config.lines)
+            .build();
+        label.style_context().add_class(APP_LABEL_CLASS);
+
+        let image = ImageBuilder::new().pixel_size(config.icon_size).build();
+        if let Some(icon) = app.icon() {
+            // Don't set the icon if it'd give us an ugly fallback icon
+            if icon_theme
+                .lookup_by_gicon(&icon, config.icon_size, IconLookupFlags::FORCE_SIZE)
+                .is_some()
+            {
+                image.set_from_gicon(&icon, gtk::IconSize::Menu);
+            }
+        }
+        image.style_context().add_class(APP_ICON_CLASS);
+
+        let hbox = BoxBuilder::new()
+            .orientation(Orientation::Horizontal)
+            .build();
+        hbox.pack_start(&image, false, false, 0);
+        hbox.pack_end(&label, true, true, 0);
+
+        let row = ListBoxRow::new();
+        row.add(&hbox);
+        row.style_context().add_class(APP_ROW_CLASS);
+
+        /* let history_data = history.get(&id).copied().unwrap_or_default();
+        let last_used = if config.recent_first {
+            history_data.last_used
+        } else {
+            0
+        };
+        let usage_count = if config.frequent_first {
+            history_data.usage_count
+        } else {
+            0
+        }; */
+
+        let app_entry = AppEntry {
+            display_string,
+            search_string,
+            extra_range,
+            info: app,
+            label,
+            score: 100,
+            history: HistoryData {
+                last_used: 1000000,
+                usage_count: 1000000,
+            },
+        };
+        app_entry.set_markup(config);
+        entries.insert(row, app_entry);
+    }
+
+    entries
 }
 
 pub fn load_entries(

@@ -43,30 +43,12 @@ use locale::*;
 mod history;
 use history::*;
 
+mod niri;
+use niri::*;
+
 use std::process::Command;
-use serde_derive::Deserialize;
 // use std::error::Error;
 use serde_json;
-
-#[derive(Deserialize)]
-struct NiriWindow {
-    id: u32,
-    title: Option<String>,
-    app_id: Option<String>,
-    workspace_id: Option<u8>,
-    is_focused: bool
-}
-
-#[derive(Deserialize)]
-struct NiriWorkspace {
-    id: u32,
-    idx: u32,
-    name: Option<String>,
-    output: String,
-    is_active: bool,
-    is_focused: bool,
-    active_window_id: Option<u32>
-}
 
 fn app_startup(application: &gtk::Application) {
 
@@ -87,15 +69,15 @@ fn app_startup(application: &gtk::Application) {
     }
 
     // Stampa le finestre
-    println!("Finestre aperte:");
-    for window in windows {
+    // println!("Finestre aperte:");
+    /* for window in windows {
         println!(
             "ID: {}, Titolo: {}, App ID: {}",
             window.id,
             window.title.clone().unwrap_or_else(|| "N/A".to_string()),
             window.app_id.clone().unwrap_or_else(|| "N/A".to_string())
         );
-    }
+    } */
 
 
     let config = Config::load();
@@ -144,7 +126,13 @@ fn app_startup(application: &gtk::Application) {
     scroll.add(&listbox);
 
     let history = Rc::new(RefCell::new(load_history(config.prune_history)));
-    let entries = Rc::new(RefCell::new(load_entries(&config, &history.borrow())));
+
+    let mut entryHashMap = load_entries(&config, &history.borrow());
+    let entryWindowsHashMap = load_entries_running(&config, windows);
+
+    entryHashMap.extend(entryWindowsHashMap);
+
+    let entries = Rc::new(RefCell::new(entryHashMap));
 
     /* for win in windows {
         let hbox = BoxBuilder::new()
