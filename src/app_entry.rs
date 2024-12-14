@@ -182,10 +182,10 @@ pub fn load_entries_running(
         let name = window.title.clone().unwrap();
         let app: AppInfo = find_app_by_id(&window.app_id.unwrap()).unwrap();
 
-        let id = match app.id() {
+        /* let id = match app.id() {
             Some(id) => id.to_string(),
             _ => continue,
-        };
+        }; */
 
         /* if exclude.is_match(&id) {
             continue;
