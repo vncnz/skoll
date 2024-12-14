@@ -164,21 +164,22 @@ fn find_app_by_id(app_id: &str) -> Option<AppInfo> {
 
 pub fn load_entries_running(
     config: &Config,
-    windows: Vec<niri::NiriWindow>
+    windows: Vec<niri::NiriWindow>,
+    workspaces_map: HashMap<u8, niri::NiriWorkspace>
 ) -> HashMap<ListBoxRow, AppEntry> {
     let mut entries = HashMap::new();
     let icon_theme = IconTheme::default().unwrap();
 
     for window in windows {
-        println!(
+        /* println!(
             "ID: {}, Titolo: {}, App ID: {}",
             window.id,
             window.title.clone().unwrap_or_else(|| "N/A".to_string()),
             window.app_id.clone().unwrap_or_else(|| "N/A".to_string())
-        );
+        ); */
 
 
-        let name = window.title.unwrap();
+        let name = window.title.clone().unwrap();
         let app: AppInfo = find_app_by_id(&window.app_id.unwrap()).unwrap();
 
         let id = match app.id() {
@@ -190,23 +191,24 @@ pub fn load_entries_running(
             continue;
         } */
 
+        // display_string is the double-row text of each entry
         let (display_string, extra_range) = if let Some(name) =
             get_app_field(&app, Field::Id).and_then(|id| config.name_overrides.get(&id))
         {
+            println!("creating name {}", name);
             let i = name.find('\r');
             (
                 name.replace('\r', " "),
                 i.map(|i| (i as u32 + 1, name.len() as u32)),
             )
         } else {
-            let extra = config
+            /* let extra = config
                 .extra_field
                 .get(0)
                 .and_then(|f| get_app_field(&app, *f));
+            println!("no name for {:?} {:?}", window.title.clone().unwrap(), &extra);
             match extra {
-                Some(e)
-                    if (!config.hide_extra_if_contained
-                        || !name.to_lowercase().contains(&e.to_lowercase())) =>
+                Some(e) if (!config.hide_extra_if_contained || !name.to_lowercase().contains(&e.to_lowercase())) =>
                 {
                     (
                         format!("{}{}{}",
@@ -221,7 +223,15 @@ pub fn load_entries_running(
                     )
                 }
                 _ => (name, None),
-            }
+            } */
+           let windata = format!("{}, Workspace {}", (if workspaces_map[&window.workspace_id].output == "eDP-1" { "󰌢" } else { "󰍹" }), window.workspace_id);
+           (
+                format!("{}\n{}", window.title.unwrap(), windata),
+                Some((
+                    name.len() as u32 + 1,
+                    name.len() as u32 + windata.len() as u32,
+                ))
+            )
         };
 
         let hidden = config

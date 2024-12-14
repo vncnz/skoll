@@ -59,7 +59,7 @@ fn app_startup(application: &gtk::Application) {
         windows = serde_json::from_str(&stdout).unwrap();
     }
     let workspaces: Vec<NiriWorkspace>;
-    let workspaces_map: HashMap<u32, NiriWorkspace>;
+    let workspaces_map: HashMap<u8, NiriWorkspace>;
     {
         let output = Command::new("niri").arg("msg").arg("-j").arg("workspaces").output();
         let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
@@ -128,7 +128,7 @@ fn app_startup(application: &gtk::Application) {
     let history = Rc::new(RefCell::new(load_history(config.prune_history)));
 
     let mut entryHashMap = load_entries(&config, &history.borrow());
-    let entryWindowsHashMap = load_entries_running(&config, windows);
+    let entryWindowsHashMap = load_entries_running(&config, windows, workspaces_map);
 
     entryHashMap.extend(entryWindowsHashMap);
 
