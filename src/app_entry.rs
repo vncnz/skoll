@@ -163,6 +163,15 @@ fn find_app_by_id(app_id: &str) -> Option<AppInfo> {
     None
 }
 
+fn find_app_by_displayname(app_name: &str) -> Option<AppInfo> {
+    for app_info in gio::AppInfo::all() {
+        if app_info.display_name().to_string() == app_name {
+            return Some(app_info);
+        }
+    }
+    None
+}
+
 pub fn load_entries_running(
     config: &Config,
     windows: Vec<niri::NiriWindow>,
@@ -185,8 +194,13 @@ pub fn load_entries_running(
         match find_app_by_id(&window.app_id) {
             Some(res) => { app = res }
             _ => {
-                println!("\x1b[91mAppInfo not found with app_id {}\x1b[0m", &window.app_id);
-                continue;
+                match find_app_by_displayname(&window.app_id) {
+                    Some(res) => { app = res }
+                    _ => {
+                        println!("\x1b[91mAppInfo not found with app_id {}\x1b[0m", &window.app_id);
+                        continue;
+                    }
+                }
             }
         }
 
