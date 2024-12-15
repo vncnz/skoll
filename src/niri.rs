@@ -4,7 +4,7 @@ use serde_derive::Deserialize;
 pub struct NiriWindow {
     pub id: u32,
     pub title: Option<String>,
-    pub app_id: Option<String>,
+    pub app_id: String,
     pub workspace_id: u8,
     pub is_focused: bool
 }

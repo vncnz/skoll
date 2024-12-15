@@ -181,7 +181,14 @@ pub fn load_entries_running(
 
 
         let name = window.title.clone().unwrap();
-        let app: AppInfo = find_app_by_id(&window.app_id.unwrap()).unwrap();
+        let app: AppInfo;
+        match find_app_by_id(&window.app_id) {
+            Some(res) => { app = res }
+            _ => {
+                println!("\x1b[91mAppInfo not found with app_id {}\x1b[0m", &window.app_id);
+                continue;
+            }
+        }
 
         /* let id = match app.id() {
             Some(id) => id.to_string(),

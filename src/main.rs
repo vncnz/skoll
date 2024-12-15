@@ -56,6 +56,7 @@ fn app_startup(application: &gtk::Application) {
     {
         let output = Command::new("niri").arg("msg").arg("-j").arg("windows").output();
         let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
+        println!("\n{:?}", stdout);
         windows = serde_json::from_str(&stdout).unwrap();
     }
     let workspaces: Vec<NiriWorkspace>;
@@ -63,7 +64,7 @@ fn app_startup(application: &gtk::Application) {
     {
         let output = Command::new("niri").arg("msg").arg("-j").arg("workspaces").output();
         let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
-        println!("{:?}", stdout);
+        println!("\n{:?}", stdout);
         workspaces = serde_json::from_str(&stdout).unwrap();
         workspaces_map = workspaces.into_iter().map(|ws| (ws.id, ws)).collect();
     }
