@@ -246,15 +246,17 @@ pub fn load_entries_running(
                 }
                 _ => (name, None),
             } */
-           let windata = format!("{}, Workspace {}", (if workspaces_map[&window.workspace_id].output == "eDP-1" { "󰌢" } else { "󰍹" }), window.workspace_id);
+           let windata = format!("{} Is open in workspace {}", (if workspaces_map[&window.workspace_id].output == "eDP-1" { "󰌢" } else { "󰍹" }), window.workspace_id);
            (
                 format!("{}\n{}", window.title.unwrap(), windata),
                 Some((
                     name.len() as u32 + 1,
-                    name.len() as u32 + windata.len() as u32,
+                    name.len() as u32 + 1 + windata.len() as u32,
                 ))
             )
         };
+
+        // display_string = format!("{} {}", (if workspaces_map[&window.workspace_id].output == "eDP-1" { "󰌢" } else { "󰍹" }), display_string);
 
         let hidden = config
             .hidden_fields
@@ -320,8 +322,8 @@ pub fn load_entries_running(
             label,
             score: 100,
             history: HistoryData {
-                last_used: 1000000,
-                usage_count: 1000000,
+                last_used: 10000000,
+                usage_count: 10000000,
             },
             custom_cmd: Some(format!("niri msg action focus-window --id {}", window.id))
         };
