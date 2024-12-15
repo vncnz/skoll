@@ -86,7 +86,12 @@ fn app_startup(application: &gtk::Application) {
     let cmd_prefix = config.command_prefix.clone();
 
     let window = gtk::ApplicationWindow::new(application);
-    window.set_size_request(config.width, config.height);
+    window.fullscreen();
+    /* window.set_size_request(1000, 700);
+    if let Some(screen) = window.screen() {
+        let visual = screen.rgba_visual();
+        window.set_visual(visual.as_ref());
+    } */
 
     gtk_layer_shell::init_for_window(&window);
     gtk_layer_shell::set_keyboard_interactivity(&window, true);
@@ -97,10 +102,10 @@ fn app_startup(application: &gtk::Application) {
         gtk_layer_shell::auto_exclusive_zone_enable(&window);
     }
 
-    gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Left, config.margin_left);
-    gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Right, config.margin_right);
-    gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Top, config.margin_top);
-    gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Bottom, config.margin_bottom);
+    gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Left, 0); // config.margin_left);
+    gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Right, 0); // config.margin_right);
+    gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Top, 0); // config.margin_top);
+    gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Bottom, 0); // config.margin_bottom);
 
     gtk_layer_shell::set_anchor(&window, gtk_layer_shell::Edge::Left, config.anchor_left);
     gtk_layer_shell::set_anchor(&window, gtk_layer_shell::Edge::Right, config.anchor_right);
@@ -110,10 +115,42 @@ fn app_startup(application: &gtk::Application) {
     window.set_decorated(false);
     window.set_app_paintable(true);
 
-    let vbox = BoxBuilder::new()
+    let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    container.set_hexpand(false);
+    container.set_vexpand(false);
+
+    let vbox0 = BoxBuilder::new()
         .name(ROOT_BOX_NAME)
         .orientation(gtk::Orientation::Vertical)
+        .width_request(1920)
+        .height_request(1080)
+        // .vexpand(true)
+        // .hexpand(true)
+        // .halign(gtk::Align::Fill)
+        // .valign(gtk::Align::Fill)
         .build();
+
+    let vbox = BoxBuilder::new()
+        .name("content")
+        .orientation(gtk::Orientation::Vertical)
+        // .width_request(config.width)
+        // .height_request(config.height)
+        // .halign(gtk::Align::Center)
+        // .valign(gtk::Align::Center)
+        .margin_top(config.margin_top)
+        .margin_end(config.margin_right)
+        .margin_bottom(config.margin_bottom)
+        .margin_start(config.margin_left)
+        .vexpand(false)
+        // .hexpand(false)
+        .build();
+    vbox.set_hexpand(true);
+    vbox.set_vexpand(true);
+
+    // vbox.set_css_classes(&["debug"]);
+
+    vbox0.add(&vbox);
+
     let entry = EntryBuilder::new().name(SEARCH_ENTRY_NAME).build(); // .width_request(300)
     vbox.pack_start(&entry, false, false, 0);
 
@@ -267,7 +304,8 @@ fn app_startup(application: &gtk::Application) {
 
     listbox.select_row(listbox.row_at_index(0).as_ref());
 
-    window.add(&vbox);
+    container.add(&vbox0);
+    window.set_child(Some(&container));
     window.show_all()
 }
 
