@@ -233,7 +233,18 @@ fn app_startup(application: &gtk::Application) {
         let es = entries.borrow();
         let e = &es[r];
         if !e.hidden() {
-            launch_app(&e.info, term_command.as_deref(), launch_cgroups);
+            match &e.custom_cmd {
+                Some(cmd) => {
+                    let cmd_parts: Vec<&str> = cmd.split_whitespace().collect();
+                    Command::new(&cmd_parts[0])
+                        .args(&cmd_parts[1..])
+                        .spawn()
+                        .expect("Error launching app");
+                }
+                _ => {
+                    launch_app(&e.info, term_command.as_deref(), launch_cgroups);
+                }
+            }
 
             let mut history = history.borrow_mut();
             update_history(&mut history, e.info.id().unwrap().as_str());

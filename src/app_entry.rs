@@ -44,6 +44,7 @@ pub struct AppEntry {
     pub label: Label,
     pub score: i64,
     pub history: HistoryData,
+    pub custom_cmd: Option<String>
 }
 
 impl AppEntry {
@@ -301,6 +302,7 @@ pub fn load_entries_running(
                 last_used: 1000000,
                 usage_count: 1000000,
             },
+            custom_cmd: Some(format!("niri msg action focus-window --id {}", window.id))
         };
         app_entry.set_markup(config);
         entries.insert(row, app_entry);
@@ -435,6 +437,7 @@ pub fn load_entries(
                 last_used,
                 usage_count,
             },
+            custom_cmd: None
         };
         app_entry.set_markup(config);
         entries.insert(row, app_entry);
