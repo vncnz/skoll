@@ -239,7 +239,7 @@ fn app_startup(application: &gtk::Application) {
                     Command::new(&cmd_parts[0])
                         .args(&cmd_parts[1..])
                         .spawn()
-                        .expect("Error launching app");
+                        .expect("Error focusing open app");
                 }
                 _ => {
                     launch_app(&e.info, term_command.as_deref(), launch_cgroups);
