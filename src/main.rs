@@ -115,7 +115,7 @@ fn app_startup(application: &gtk::Application) {
     window.set_decorated(false);
     window.set_app_paintable(true);
 
-    let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    let container = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     container.set_hexpand(false);
     container.set_vexpand(false);
 
@@ -165,12 +165,12 @@ fn app_startup(application: &gtk::Application) {
 
     let history = Rc::new(RefCell::new(load_history(config.prune_history)));
 
-    let mut entryHashMap = load_entries(&config, &history.borrow());
-    let entryWindowsHashMap = load_entries_running(&config, windows, workspaces_map);
+    let mut entry_hash_map = load_entries(&config, &history.borrow());
+    let entry_windows_hash_map = load_entries_running(&config, windows, workspaces_map);
 
-    entryHashMap.extend(entryWindowsHashMap);
+    entry_hash_map.extend(entry_windows_hash_map);
 
-    let entries = Rc::new(RefCell::new(entryHashMap));
+    let entries = Rc::new(RefCell::new(entry_hash_map));
 
     /* for win in windows {
         let hbox = BoxBuilder::new()
