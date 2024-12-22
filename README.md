@@ -12,4 +12,7 @@ This project started as a copy of Sirula project by Dorian Rudolph. I think I'll
 - [x] Fullscreen background and UI refactoring
 - [ ] Remove fixed size for fullscreen
 - [ ] Create the possibility of custom commands passed by as arguments -- study the compatibility with fuzzel et similia for potential replacement
-- [ ] 
+- [ ] Network info?
+- [ ] Avg load?
+- [ ] Random sentence/quote from a list in toml configuration?
+- [ ] Generic input from external source?
