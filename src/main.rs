@@ -19,7 +19,7 @@ use fuzzy_matcher::skim::SkimMatcherV2;
 use gdk::keys::constants;
 use gio::prelude::*;
 use gtk::{
-    builders::{BoxBuilder, EntryBuilder, ListBoxBuilder, ScrolledWindowBuilder}, prelude::*, ListBoxRow
+    builders::{BoxBuilder, EntryBuilder, ListBoxBuilder, ScrolledWindowBuilder}, prelude::*, Label, ListBoxRow
 };
 use libc::LC_ALL;
 use std::env::args;
@@ -49,6 +49,10 @@ use niri::*;
 use std::process::Command;
 // use std::error::Error;
 use serde_json;
+
+pub fn get_from_map<'a, K: Eq + std::hash::Hash, V>(map: &'a HashMap<K, V>, key: &K) -> Option<&'a V> {
+    map.get(key) // .expect(&format!("Key not found in map"))
+}
 
 fn app_startup(application: &gtk::Application) {
 
@@ -169,6 +173,7 @@ fn app_startup(application: &gtk::Application) {
     let entry_windows_hash_map = load_entries_running(&config, windows, workspaces_map);
 
     entry_hash_map.extend(entry_windows_hash_map);
+    let entry_hash_map2 = entry_hash_map.clone();
 
     let entries = Rc::new(RefCell::new(entry_hash_map));
 
@@ -187,6 +192,20 @@ fn app_startup(application: &gtk::Application) {
     } */
 
     for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
+        /*let appentry = get_from_map(&entry_hash_map2, &row.clone());
+        match appentry {
+            Some(val) => {
+                if Some(&val.custom_cmd).is_some() {
+                    let header_row = ListBoxRow::new();
+                    let header_label = Label::new(Some("On display"));
+                    header_label.set_markup(&format!("<b>{}</b>", "On display"));
+                    header_row.add(&header_label);
+                    listbox.add(&header_row);
+                }
+            }
+            None => (),
+        }*/
+
         listbox.add(row);
     }
 

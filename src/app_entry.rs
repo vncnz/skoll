@@ -35,7 +35,7 @@ use regex::RegexSet;
 
 use crate::niri;
 
-#[derive(Eq)]
+#[derive(Eq, Clone)]
 pub struct AppEntry {
     pub display_string: String,
     pub search_string: String,
