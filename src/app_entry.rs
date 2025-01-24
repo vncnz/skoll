@@ -44,7 +44,8 @@ pub struct AppEntry {
     pub label: Label,
     pub score: i64,
     pub history: HistoryData,
-    pub custom_cmd: Option<String>
+    pub custom_cmd: Option<String>,
+    pub display: String
 }
 
 impl AppEntry {
@@ -325,7 +326,8 @@ pub fn load_entries_running(
                 last_used: 10000000,
                 usage_count: 10000000,
             },
-            custom_cmd: Some(format!("niri msg action focus-window --id {}", window.id))
+            custom_cmd: Some(format!("niri msg action focus-window --id {}", window.id)),
+            display: workspaces_map[&window.workspace_id].output.clone()
         };
         app_entry.set_markup(config);
         entries.insert(row, app_entry);
@@ -460,7 +462,8 @@ pub fn load_entries(
                 last_used,
                 usage_count,
             },
-            custom_cmd: None
+            custom_cmd: None,
+            display: String::new()
         };
         app_entry.set_markup(config);
         entries.insert(row, app_entry);

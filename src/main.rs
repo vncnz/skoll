@@ -171,9 +171,9 @@ fn app_startup(application: &gtk::Application) {
 
     let mut entry_hash_map = load_entries(&config, &history.borrow());
     let entry_windows_hash_map = load_entries_running(&config, windows, workspaces_map);
+    // let entry_hash_map2 = entry_windows_hash_map.clone();
 
     entry_hash_map.extend(entry_windows_hash_map);
-    let entry_hash_map2 = entry_hash_map.clone();
 
     let entries = Rc::new(RefCell::new(entry_hash_map));
 
@@ -192,7 +192,7 @@ fn app_startup(application: &gtk::Application) {
     } */
 
     for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
-        /*let appentry = get_from_map(&entry_hash_map2, &row.clone());
+        /* let appentry = get_from_map(&entry_hash_map2, &row.clone());
         match appentry {
             Some(val) => {
                 if Some(&val.custom_cmd).is_some() {
@@ -204,7 +204,7 @@ fn app_startup(application: &gtk::Application) {
                 }
             }
             None => (),
-        }*/
+        } */
 
         listbox.add(row);
     }
@@ -314,11 +314,22 @@ fn app_startup(application: &gtk::Application) {
     listbox.set_filter_func(Some(Box::new(clone!(entries => move |r| {
         let e = entries.borrow();
         !e[r].hidden()
+        // true
     }))));
 
     listbox.set_sort_func(Some(Box::new(clone!(entries => move |a, b| {
         let e = entries.borrow();
-        e[a].cmp(&e[b]) as i32
+        // e[a].cmp(&e[b]) as i32
+
+        if let (Some(e_a), Some(e_b)) = (e.get(a), e.get(b)) {
+            if e_a.display == e_b.display {
+                e_a.cmp(&e_b) as i32
+            } else {
+                e_b.display.cmp(&e_a.display) as i32
+            }
+        } else {
+            0
+        }
     }))));
 
     listbox.select_row(listbox.row_at_index(0).as_ref());
