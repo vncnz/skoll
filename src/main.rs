@@ -155,6 +155,27 @@ fn app_startup(application: &gtk::Application) {
 
     vbox0.add(&vbox);
 
+    let extraInfoBox = BoxBuilder::new()
+        .name("extra")
+        .orientation(gtk::Orientation::Vertical)
+        // .width_request(config.width)
+        // .height_request(config.height)
+        // .halign(gtk::Align::Center)
+        // .valign(gtk::Align::Center)
+        //.margin_top(config.margin_top)
+        //.margin_end(config.margin_right)
+        //.margin_bottom(config.margin_bottom)
+        //.margin_start(config.margin_left)
+        .vexpand(false)
+        // .hexpand(false)
+        .build();
+    extraInfoBox.set_hexpand(true);
+    extraInfoBox.set_vexpand(false);
+
+    // vbox.set_css_classes(&["debug"]);
+
+    vbox0.add(&extraInfoBox);
+
     let entry = EntryBuilder::new().name(SEARCH_ENTRY_NAME).build(); // .width_request(300)
     vbox.pack_start(&entry, false, false, 0);
 
@@ -334,6 +355,65 @@ fn app_startup(application: &gtk::Application) {
 
     listbox.select_row(listbox.row_at_index(0).as_ref());
 
+
+
+
+
+
+
+
+
+
+
+
+
+    let label_sys_avg = Label::new(Some("AVG?"));
+    label_sys_avg.set_margin_top(10);
+    label_sys_avg.set_margin_bottom(10);
+    label_sys_avg.set_margin_start(10);
+    label_sys_avg.set_margin_end(10);
+
+
+    /* struct SysData {
+        loadavg: Option<String>
+    }
+
+    let sysdata = SysData {
+        loadavg: None
+    }; */
+
+
+    fn get_load_avg() -> String {
+        if let Ok(output) = std::fs::read_to_string("/proc/loadavg") {
+            let parts: Vec<&str> = output.split_whitespace().collect();
+            format!("{} {} {} 󰬢", parts[0], parts[1], parts[2])
+        } else {
+            "Errore".into()
+        }
+    }
+
+    let (sender, receiver) = glib::MainContext::channel::<String>(glib::PRIORITY_DEFAULT);
+
+    let label_sys_avg_clone = label_sys_avg.clone();
+    // In main thread: connessione all'aggiornamento
+    receiver.attach(None, move |info| {
+        label_sys_avg_clone.set_text(&info);  // o qualunque widget aggiorni
+        // sysdata.loadavg = Some(info);
+        // println!("\n\n\n\n{}\n\n\n\n", sysdata.loadavg.unwrap_or_default());
+        glib::Continue(true)
+    });
+
+    // In un altro thread: aggiornamento periodico
+    std::thread::spawn(move || {
+        loop {
+            let info = get_load_avg();
+            sender.send(info).expect("Send failed");
+            std::thread::sleep(std::time::Duration::from_secs(5));
+        }
+    });
+
+    // vbox0.add(&label_sys_avg);
+    extraInfoBox.add(&label_sys_avg);
     container.add(&vbox0);
     window.set_child(Some(&container));
     window.show_all()
