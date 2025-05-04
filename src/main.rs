@@ -50,6 +50,8 @@ use std::process::Command;
 // use std::error::Error;
 use serde_json;
 
+use sysinfo::System;
+
 pub fn get_from_map<'a, K: Eq + std::hash::Hash, V>(map: &'a HashMap<K, V>, key: &K) -> Option<&'a V> {
     map.get(key) // .expect(&format!("Key not found in map"))
 }
@@ -151,13 +153,9 @@ fn app_startup(application: &gtk::Application) {
     vbox.set_hexpand(true);
     vbox.set_vexpand(true);
 
-    // vbox.set_css_classes(&["debug"]);
-
-    vbox0.add(&vbox);
-
     let extraInfoBox = BoxBuilder::new()
         .name("extra")
-        .orientation(gtk::Orientation::Vertical)
+        .orientation(gtk::Orientation::Horizontal)
         // .width_request(config.width)
         // .height_request(config.height)
         // .halign(gtk::Align::Center)
@@ -175,6 +173,9 @@ fn app_startup(application: &gtk::Application) {
     // vbox.set_css_classes(&["debug"]);
 
     vbox0.add(&extraInfoBox);
+    vbox0.add(&vbox);
+
+    // vbox.set_css_classes(&["debug"]);
 
     let entry = EntryBuilder::new().name(SEARCH_ENTRY_NAME).build(); // .width_request(300)
     vbox.pack_start(&entry, false, false, 0);
@@ -372,6 +373,12 @@ fn app_startup(application: &gtk::Application) {
     label_sys_avg.set_margin_bottom(10);
     label_sys_avg.set_margin_start(10);
     label_sys_avg.set_margin_end(10);
+    
+    let label_sys_ram = Label::new(Some("RAM?"));
+    label_sys_ram.set_margin_top(10);
+    label_sys_ram.set_margin_bottom(10);
+    label_sys_ram.set_margin_start(10);
+    label_sys_ram.set_margin_end(10);
 
 
     /* struct SysData {
@@ -382,22 +389,40 @@ fn app_startup(application: &gtk::Application) {
         loadavg: None
     }; */
 
+    enum SysUpdate {
+        LoadAvg(String),
+        RAM(u64, u64, u64, u64),
+        Error(String)
+    }
 
-    fn get_load_avg() -> String {
+
+    fn get_load_avg() -> SysUpdate {
         if let Ok(output) = std::fs::read_to_string("/proc/loadavg") {
             let parts: Vec<&str> = output.split_whitespace().collect();
-            format!("{} {} {} 󰬢", parts[0], parts[1], parts[2])
+            SysUpdate::LoadAvg(format!("{} {} {} 󰬢", parts[0], parts[1], parts[2]))
         } else {
-            "Errore".into()
+            SysUpdate::Error("Errore".into())
         }
     }
 
-    let (sender, receiver) = glib::MainContext::channel::<String>(glib::PRIORITY_DEFAULT);
+    fn get_ram_info() -> SysUpdate {
+        let mut sys = System::new();
+        sys.refresh_memory();
+        SysUpdate::RAM(sys.total_memory() / 1024, sys.free_memory() / 1024, sys.total_swap() / 1024, sys.free_swap() / 1024)
+    }
+    
+
+    let (sender, receiver) = glib::MainContext::channel::<SysUpdate>(glib::PRIORITY_DEFAULT);
 
     let label_sys_avg_clone = label_sys_avg.clone();
+    let label_sys_ram_clone = label_sys_ram.clone();
     // In main thread: connessione all'aggiornamento
-    receiver.attach(None, move |info| {
-        label_sys_avg_clone.set_text(&info);  // o qualunque widget aggiorni
+    receiver.attach(None, move |info: SysUpdate| {
+        match info {
+            SysUpdate::LoadAvg(info) => label_sys_avg_clone.set_text(&info),
+            SysUpdate::RAM(tm, fm, ts, fw) => label_sys_ram_clone.set_text(&format!("RAM: {} / {} ({:.2}%) SWAP: {} / {} ({:.2}%)", fm, tm, ((tm - fm) as f64 / tm as f64) * 100.0, fw, ts, ((ts - fw) as f64 / ts as f64) * 100.0)),
+            SysUpdate::Error(error) => {}
+        }
         // sysdata.loadavg = Some(info);
         // println!("\n\n\n\n{}\n\n\n\n", sysdata.loadavg.unwrap_or_default());
         glib::Continue(true)
@@ -406,14 +431,15 @@ fn app_startup(application: &gtk::Application) {
     // In un altro thread: aggiornamento periodico
     std::thread::spawn(move || {
         loop {
-            let info = get_load_avg();
-            sender.send(info).expect("Send failed");
-            std::thread::sleep(std::time::Duration::from_secs(5));
+            sender.send(get_load_avg()).expect("Send failed");
+            sender.send(get_ram_info()).expect("Send failed");
+            std::thread::sleep(std::time::Duration::from_secs(2));
         }
     });
 
     // vbox0.add(&label_sys_avg);
     extraInfoBox.add(&label_sys_avg);
+    extraInfoBox.add(&label_sys_ram);
     container.add(&vbox0);
     window.set_child(Some(&container));
     window.show_all()
