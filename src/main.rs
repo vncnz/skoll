@@ -16,6 +16,7 @@ struct LauncherApp {
     filter: String,
     apps: Vec<AppEntry>,
     icons: HashMap<String, TextureHandle>,
+    first_frame: bool
 }
 
 impl LauncherApp {
@@ -110,26 +111,29 @@ impl LauncherApp {
 impl App for LauncherApp {
     /* fn name(&self) -> &str {
         "egui-launcher"
-    } * /
-
-    fn setup(
-        &mut self,
-        ctx: &egui::Context,
-        _frame: &mut Frame,
-    ) {
-        ctx.set_visuals(egui::Visuals {
-            window_fill: egui::Color32::from_rgba_premultiplied(10, 10, 10, 200),
-            ..Default::default()
-        });
-
-        self.icons = Self::load_icons(ctx, &self.apps);
     } */
 
     fn update(&mut self, ctx: &egui::Context, frame: &mut Frame) {
-        ctx.set_visuals(egui::Visuals {
-            window_fill: egui::Color32::from_rgba_unmultiplied(0, 0, 0, 10),
-            ..Default::default()
-        });
+        let search_id = egui::Id::new("search");
+        if self.first_frame {
+            ctx.set_visuals(egui::Visuals {
+                window_fill: egui::Color32::RED, // egui::Color32::from_rgba_premultiplied(110, 10, 10, 200),
+                ..Default::default()
+            });
+    
+            self.icons = Self::load_icons(ctx, &self.apps);
+            self.first_frame = false;
+            
+            /*{
+                frame.
+                
+                let mut memory = ui.memory();
+                if memory.focus() == None {
+                    memory.request_focus(button.id);
+                }                      
+            }*/
+            
+        }
         
         if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
             // frame.close();
@@ -139,7 +143,7 @@ impl App for LauncherApp {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Launcher");
-            ui.add(egui::TextEdit::singleline(&mut self.filter).hint_text("Cerca app..."));
+            ui.add(egui::TextEdit::singleline(&mut self.filter).hint_text("Cerca app...").id(search_id));
             ui.separator();
 
             egui::ScrollArea::vertical().show(ui, |ui| {
@@ -230,6 +234,7 @@ fn main() -> eframe::Result<()> {
                 filter: String::new(),
                 apps,
                 icons: HashMap::new(),
+                first_frame: true
             })
         }),
     )
