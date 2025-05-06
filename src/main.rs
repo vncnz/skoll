@@ -39,7 +39,6 @@ impl LauncherApp {
     
         entries
     }
-
     fn resolve_icon(icon_name: &str) -> Option<PathBuf> {
         let exts = ["png", "svg", "xpm"];
         let dirs = vec![
@@ -47,6 +46,7 @@ impl LauncherApp {
             "/usr/share/icons/hicolor/64x64/apps/",
             "/usr/share/icons/hicolor/scalable/apps/",
             "/usr/share/pixmaps/",
+            "$HOME/.local/share/icons"
         ];
 
         for dir in dirs {
@@ -113,6 +113,10 @@ impl App for LauncherApp {
         "egui-launcher"
     } */
 
+   fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
+    egui::Rgba::TRANSPARENT.to_array()
+   }
+
     fn update(&mut self, ctx: &egui::Context, frame: &mut Frame) {
         let search_id = egui::Id::new("search");
         if self.first_frame {
@@ -123,16 +127,6 @@ impl App for LauncherApp {
     
             self.icons = Self::load_icons(ctx, &self.apps);
             self.first_frame = false;
-            
-            /*{
-                frame.
-                
-                let mut memory = ui.memory();
-                if memory.focus() == None {
-                    memory.request_focus(button.id);
-                }                      
-            }*/
-            
         }
         
         if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
@@ -142,8 +136,10 @@ impl App for LauncherApp {
         }
 
         egui::CentralPanel::default().frame(egui::Frame::none()).show(ctx, |ui| {
+
+            let input_element = egui::TextEdit::singleline(&mut self.filter).hint_text("Cerca app...").id(search_id);
             ui.heading("Launcher");
-            ui.add(egui::TextEdit::singleline(&mut self.filter).hint_text("Cerca app...").id(search_id));
+            ui.add(input_element);
             ui.separator();
 
             egui::ScrollArea::vertical().show(ui, |ui| {
