@@ -19,7 +19,13 @@ use fuzzy_matcher::skim::SkimMatcherV2;
 use gdk::keys::constants;
 use gio::prelude::*;
 use gtk::{
-    builders::{BoxBuilder, EntryBuilder, ListBoxBuilder, ScrolledWindowBuilder}, prelude::*, Label, ListBoxRow
+    builders::{
+        BoxBuilder, 
+        LabelBuilder,
+        EntryBuilder, 
+        ListBoxBuilder, 
+        ScrolledWindowBuilder
+    }, prelude::*, Label, ListBoxRow
 };
 use libc::LC_ALL;
 use std::env::args;
@@ -184,7 +190,7 @@ fn app_startup(application: &gtk::Application) {
     // vbox.set_css_classes(&["debug"]);
 
     let entry = EntryBuilder::new().name(SEARCH_ENTRY_NAME).build(); // .width_request(300)
-    search_container.pack_start(&entry, true, true, 0);
+    search_container.pack_start(&entry, false, false, 0);
 
     let scroll = ScrolledWindowBuilder::new()
         .name(SCROLL_NAME)
@@ -388,11 +394,11 @@ fn app_startup(application: &gtk::Application) {
     tips_box.set_vexpand(true);
     tips_box.set_valign(gtk::Align::Fill);
 
-    let label_tip_1 = Label::new(Some("Use tray-tui for tray usage!"));
-    label_tip_1.set_margin_top(10);
-    label_tip_1.set_margin_bottom(10);
-    label_tip_1.set_margin_start(10);
-    label_tip_1.set_margin_end(10);
+    let label_tip_1 = LabelBuilder::new()
+        .label("Use tray-tui for tray usage!")
+        .margin(10)
+        .build();
+    // let label_tip_1 = Label::new(Some("Use tray-tui for tray usage!"));
 
     tips_box.add(&label_tip_1);
     second_row.add(&tips_box);
@@ -476,11 +482,17 @@ fn app_startup(application: &gtk::Application) {
     extra_info_box.add(&label_sys_ram);
     window.set_child(Some(&container));
 
-    /* if let Some(display) = gdk::Display::default() {
-        if let Some(monitor) = display.primary_monitor() {
-            window.fullscreen_on_monitor(&monitor);
+    if let Some(display) = gdk::Display::default() {
+        if let Some(monitor) = display.monitor(0) {
+            let geometry = monitor.geometry();
+            window.set_size_request(geometry.width(), geometry.height());
+            window.move_(geometry.x(), geometry.y());
+        } else {
+            println!("\n\nNO MONITOR\n\n");
         }
-    } */
+    } else {
+        println!("\n\nNO DISPLAY\n\n");
+    }
 
     window.show_all()
 }
