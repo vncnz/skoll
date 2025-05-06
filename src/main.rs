@@ -93,22 +93,18 @@ fn app_startup(application: &gtk::Application) {
 
     let window = gtk::ApplicationWindow::new(application);
     window.fullscreen();
-    /* window.set_size_request(1000, 700);
-    if let Some(screen) = window.screen() {
-        let visual = screen.rgba_visual();
-        window.set_visual(visual.as_ref());
-    } */
+    window.set_size_request(1000, 700);
 
     gtk_layer_shell::init_for_window(&window);
     gtk_layer_shell::set_keyboard_interactivity(&window, true);
     gtk_layer_shell::set_layer(&window, gtk_layer_shell::Layer::Overlay);
     gtk_layer_shell::set_namespace(&window, "skoll");
 
-    if config.exclusive {
+    /* if config.exclusive {
         gtk_layer_shell::auto_exclusive_zone_enable(&window);
-    }
+    } */
 
-    gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Left, 0); // config.margin_left);
+    /* gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Left, 0); // config.margin_left);
     gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Right, 0); // config.margin_right);
     gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Top, 0); // config.margin_top);
     gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Bottom, 0); // config.margin_bottom);
@@ -116,75 +112,85 @@ fn app_startup(application: &gtk::Application) {
     gtk_layer_shell::set_anchor(&window, gtk_layer_shell::Edge::Left, config.anchor_left);
     gtk_layer_shell::set_anchor(&window, gtk_layer_shell::Edge::Right, config.anchor_right);
     gtk_layer_shell::set_anchor(&window, gtk_layer_shell::Edge::Top, config.anchor_top);
-    gtk_layer_shell::set_anchor(&window, gtk_layer_shell::Edge::Bottom, config.anchor_bottom);
+    gtk_layer_shell::set_anchor(&window, gtk_layer_shell::Edge::Bottom, config.anchor_bottom); */
 
     window.set_decorated(false);
     window.set_app_paintable(true);
 
-    let container = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    container.set_hexpand(false);
-    container.set_vexpand(false);
-
-    let vbox0 = BoxBuilder::new()
+    let container = BoxBuilder::new()
         .name(ROOT_BOX_NAME)
         .orientation(gtk::Orientation::Vertical)
-        .width_request(1920)
-        .height_request(1080)
-        // .vexpand(true)
-        // .hexpand(true)
-        // .halign(gtk::Align::Fill)
-        // .valign(gtk::Align::Fill)
+        .width_request(1800)
+        .width_request(500)
+        .valign(gtk::Align::Fill)
+        .halign(gtk::Align::Fill)
+        .vexpand(true)
+        .hexpand(true)
         .build();
 
-    let vbox = BoxBuilder::new()
-        .name("content")
-        .orientation(gtk::Orientation::Vertical)
-        // .width_request(config.width)
-        // .height_request(config.height)
-        // .halign(gtk::Align::Center)
-        // .valign(gtk::Align::Center)
-        .margin_top(config.margin_top)
-        .margin_end(config.margin_right)
-        .margin_bottom(config.margin_bottom)
-        .margin_start(config.margin_left)
-        .vexpand(false)
-        // .hexpand(false)
-        .build();
-    vbox.set_hexpand(true);
-    vbox.set_vexpand(true);
-
-    let extraInfoBox = BoxBuilder::new()
-        .name("extra")
+    let extra_info_box = BoxBuilder::new()
+        .name("extra_info_box")
         .orientation(gtk::Orientation::Horizontal)
         // .width_request(config.width)
         // .height_request(config.height)
-        // .halign(gtk::Align::Center)
-        // .valign(gtk::Align::Center)
         //.margin_top(config.margin_top)
         //.margin_end(config.margin_right)
         //.margin_bottom(config.margin_bottom)
         //.margin_start(config.margin_left)
         .vexpand(false)
+        .hexpand(true)
+        .halign(gtk::Align::Center)
+        .valign(gtk::Align::Fill)
+        .build();
+
+    let second_row = BoxBuilder::new()
+        .name("second_row")
+        .orientation(gtk::Orientation::Horizontal)
+        // .width_request(config.width)
+        // .height_request(config.height)
+        // .halign(gtk::Align::Center)
+        // .margin_top(config.margin_top)
+        // .margin_end(config.margin_right)
+        // .margin_bottom(config.margin_bottom)
+        // .margin_start(config.margin_left)
+        .hexpand(true)
+        .vexpand(true)
+        .halign(gtk::Align::Fill)
+        .valign(gtk::Align::Fill)
         // .hexpand(false)
         .build();
-    extraInfoBox.set_hexpand(true);
-    extraInfoBox.set_vexpand(false);
+    second_row.set_hexpand(true);
 
-    // vbox.set_css_classes(&["debug"]);
+    let search_container = BoxBuilder::new()
+        .name("search_container")
+        .orientation(gtk::Orientation::Vertical)
+        // .width_request(config.width)
+        // .height_request(config.height)
+        // .halign(gtk::Align::Center)
+        .margin_top(config.margin_top)
+        .margin_end(config.margin_right)
+        .margin_bottom(config.margin_bottom)
+        .margin_start(config.margin_left)
+        .vexpand(true)
+        .hexpand(true)
+        .halign(gtk::Align::Fill)
+        .valign(gtk::Align::Fill)
+        .build();
 
-    vbox0.add(&extraInfoBox);
-    vbox0.add(&vbox);
+    second_row.add(&search_container);    
+    container.add(&extra_info_box);
+    container.add(&second_row);
 
     // vbox.set_css_classes(&["debug"]);
 
     let entry = EntryBuilder::new().name(SEARCH_ENTRY_NAME).build(); // .width_request(300)
-    vbox.pack_start(&entry, false, false, 0);
+    search_container.pack_start(&entry, true, true, 0);
 
     let scroll = ScrolledWindowBuilder::new()
         .name(SCROLL_NAME)
         .hscrollbar_policy(gtk::PolicyType::Never)
         .build();
-    vbox.pack_end(&scroll, true, true, 0);
+    search_container.pack_end(&scroll, true, true, 0);
 
     let listbox = ListBoxBuilder::new().name(LISTBOX_NAME).build();
     scroll.add(&listbox);
@@ -362,6 +368,34 @@ fn app_startup(application: &gtk::Application) {
 
 
 
+    // TIPS SECTION
+
+    let tips_box = BoxBuilder::new()
+        .name("tips")
+        .orientation(gtk::Orientation::Vertical)
+        // .width_request(config.width)
+        // .height_request(config.height)
+        // .halign(gtk::Align::Center)
+        // .valign(gtk::Align::Center)
+        //.margin_top(config.margin_top)
+        //.margin_end(config.margin_right)
+        //.margin_bottom(config.margin_bottom)
+        //.margin_start(config.margin_left)
+        .vexpand(true)
+        // .hexpand(false)
+        .build();
+    tips_box.set_hexpand(true);
+    tips_box.set_vexpand(true);
+    tips_box.set_valign(gtk::Align::Fill);
+
+    let label_tip_1 = Label::new(Some("Use tray-tui for tray usage!"));
+    label_tip_1.set_margin_top(10);
+    label_tip_1.set_margin_bottom(10);
+    label_tip_1.set_margin_start(10);
+    label_tip_1.set_margin_end(10);
+
+    tips_box.add(&label_tip_1);
+    second_row.add(&tips_box);
 
 
 
@@ -438,10 +472,16 @@ fn app_startup(application: &gtk::Application) {
     });
 
     // vbox0.add(&label_sys_avg);
-    extraInfoBox.add(&label_sys_avg);
-    extraInfoBox.add(&label_sys_ram);
-    container.add(&vbox0);
+    extra_info_box.add(&label_sys_avg);
+    extra_info_box.add(&label_sys_ram);
     window.set_child(Some(&container));
+
+    /* if let Some(display) = gdk::Display::default() {
+        if let Some(monitor) = display.primary_monitor() {
+            window.fullscreen_on_monitor(&monitor);
+        }
+    } */
+
     window.show_all()
 }
 
