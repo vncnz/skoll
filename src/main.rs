@@ -141,7 +141,7 @@ impl App for LauncherApp {
             return;
         }
 
-        egui::CentralPanel::default().show(ctx, |ui| {
+        egui::CentralPanel::default().frame(egui::Frame::none()).show(ctx, |ui| {
             ui.heading("Launcher");
             ui.add(egui::TextEdit::singleline(&mut self.filter).hint_text("Cerca app...").id(search_id));
             ui.separator();
