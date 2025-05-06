@@ -58,8 +58,46 @@ use serde_json;
 
 use sysinfo::System;
 
+use bytesize::ByteSize;
+
 pub fn get_from_map<'a, K: Eq + std::hash::Hash, V>(map: &'a HashMap<K, V>, key: &K) -> Option<&'a V> {
     map.get(key) // .expect(&format!("Key not found in map"))
+}
+
+fn hsv_to_rgb(h: f64, s: f64, v: f64) -> (u8, u8, u8) {
+    let c = v * s;
+    let x = c * (1.0 - ((h / 60.0) % 2.0 - 1.0).abs());
+    let m = v - c;
+
+    let (r1, g1, b1) = match h {
+        h if h < 60.0 => (c, x, 0.0),
+        h if h < 120.0 => (x, c, 0.0),
+        h if h < 180.0 => (0.0, c, x),
+        h if h < 240.0 => (0.0, x, c),
+        h if h < 300.0 => (x, 0.0, c),
+        _ => (c, 0.0, x),
+    };
+
+    let r = ((r1 + m) * 255.0).round() as u8;
+    let g = ((g1 + m) * 255.0).round() as u8;
+    let b = ((b1 + m) * 255.0).round() as u8;
+
+    (r, g, b)
+}
+
+fn get_color_gradient(min: f64, max: f64, value: f64) -> String {
+    let clamped = value.clamp(min, max);
+    let ratio = if (max - min).abs() < f64::EPSILON {
+        0.5
+    } else {
+        (clamped - min) / (max - min)
+    };
+
+    // Interpola l'hue da 120° (verde) a 0° (rosso)
+    let hue = 120.0 * (1.0 - ratio); // 120 -> 0
+    let (r, g, b) = hsv_to_rgb(hue, 1.0, 1.0);
+
+    format!("#{:02X}{:02X}{:02X}", r, g, b)
 }
 
 fn app_startup(application: &gtk::Application) {
@@ -379,28 +417,25 @@ fn app_startup(application: &gtk::Application) {
     let tips_box = BoxBuilder::new()
         .name("tips")
         .orientation(gtk::Orientation::Vertical)
-        // .width_request(config.width)
-        // .height_request(config.height)
-        // .halign(gtk::Align::Center)
-        // .valign(gtk::Align::Center)
-        //.margin_top(config.margin_top)
-        //.margin_end(config.margin_right)
-        //.margin_bottom(config.margin_bottom)
-        //.margin_start(config.margin_left)
+        .halign(gtk::Align::End)
+        .valign(gtk::Align::End)
         .vexpand(true)
-        // .hexpand(false)
         .build();
-    tips_box.set_hexpand(true);
-    tips_box.set_vexpand(true);
-    tips_box.set_valign(gtk::Align::Fill);
 
-    let label_tip_1 = LabelBuilder::new()
-        .label("Use tray-tui for tray usage!")
-        .margin(10)
-        .build();
-    // let label_tip_1 = Label::new(Some("Use tray-tui for tray usage!"));
+    for txt in [
+        "1. Tray usage: tray-tui",
+        "2. Bluetooth management: bluetui",
+        "3. Network management: impala"
+    ] {
+        let label_tip_1 = LabelBuilder::new()
+            .label(txt)
+            .margin(10)
+            .halign(gtk::Align::Start)
+            .build();
+        // let label_tip_1 = Label::new(Some("Use tray-tui for tray usage!"));
 
-    tips_box.add(&label_tip_1);
+        tips_box.add(&label_tip_1);
+    }
     second_row.add(&tips_box);
 
 
@@ -409,25 +444,10 @@ fn app_startup(application: &gtk::Application) {
 
 
     let label_sys_avg = Label::new(Some("AVG?"));
-    label_sys_avg.set_margin_top(10);
-    label_sys_avg.set_margin_bottom(10);
-    label_sys_avg.set_margin_start(10);
-    label_sys_avg.set_margin_end(10);
+    label_sys_avg.set_margin(10);
     
     let label_sys_ram = Label::new(Some("RAM?"));
-    label_sys_ram.set_margin_top(10);
-    label_sys_ram.set_margin_bottom(10);
-    label_sys_ram.set_margin_start(10);
-    label_sys_ram.set_margin_end(10);
-
-
-    /* struct SysData {
-        loadavg: Option<String>
-    }
-
-    let sysdata = SysData {
-        loadavg: None
-    }; */
+    label_sys_ram.set_margin(10);
 
     enum SysUpdate {
         LoadAvg(String),
@@ -448,7 +468,8 @@ fn app_startup(application: &gtk::Application) {
     fn get_ram_info() -> SysUpdate {
         let mut sys = System::new();
         sys.refresh_memory();
-        SysUpdate::RAM(sys.total_memory() / 1024, sys.free_memory() / 1024, sys.total_swap() / 1024, sys.free_swap() / 1024)
+
+        SysUpdate::RAM(sys.total_memory(), sys.used_memory(), sys.total_swap(), sys.used_swap())
     }
     
 
@@ -460,7 +481,16 @@ fn app_startup(application: &gtk::Application) {
     receiver.attach(None, move |info: SysUpdate| {
         match info {
             SysUpdate::LoadAvg(info) => label_sys_avg_clone.set_text(&info),
-            SysUpdate::RAM(tm, fm, ts, fw) => label_sys_ram_clone.set_text(&format!("RAM: {} / {} ({:.2}%) SWAP: {} / {} ({:.2}%)", fm, tm, ((tm - fm) as f64 / tm as f64) * 100.0, fw, ts, ((ts - fw) as f64 / ts as f64) * 100.0)),
+            SysUpdate::RAM(tm, um, ts, uw) => {
+                let umh = ByteSize::b(um).display().iec().to_string();
+                let tmh = ByteSize::b(tm).display().iec().to_string();
+                let tsh = ByteSize::b(ts).display().iec().to_string();
+                let uwh = ByteSize::b(uw).display().iec().to_string();
+                let memory_ratio = (um as f64 / tm as f64);
+                let color = get_color_gradient(65.0, 90.0, memory_ratio * 100.0);
+                label_sys_ram_clone.set_markup(&format!("<span foreground=\"{}\">RAM: {} / {} ({:.2}%) SWAP: {} / {} ({:.2}%)</span>", color, umh, tmh, memory_ratio * 100.0, uwh, tsh, (uw as f64 / ts as f64) * 100.0));
+                // label_sys_ram_clone.set_text(&format!("RAM: {} / {} ({:.2}%) SWAP: {} / {} ({:.2}%)", umh, tmh, (um as f64 / tm as f64) * 100.0, uwh, tsh, (uw as f64 / ts as f64) * 100.0))
+            },
             SysUpdate::Error(error) => {}
         }
         // sysdata.loadavg = Some(info);
