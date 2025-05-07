@@ -60,64 +60,13 @@ use sysinfo::System;
 
 use bytesize::ByteSize;
 
-pub fn get_from_map<'a, K: Eq + std::hash::Hash, V>(map: &'a HashMap<K, V>, key: &K) -> Option<&'a V> {
+/* pub fn get_from_map<'a, K: Eq + std::hash::Hash, V>(map: &'a HashMap<K, V>, key: &K) -> Option<&'a V> {
     map.get(key) // .expect(&format!("Key not found in map"))
-}
-
-fn hsv_to_rgb(h: f64, s: f64, v: f64) -> (u8, u8, u8) {
-    let c = v * s;
-    let x = c * (1.0 - ((h / 60.0) % 2.0 - 1.0).abs());
-    let m = v - c;
-
-    let (r1, g1, b1) = match h {
-        h if h < 60.0 => (c, x, 0.0),
-        h if h < 120.0 => (x, c, 0.0),
-        h if h < 180.0 => (0.0, c, x),
-        h if h < 240.0 => (0.0, x, c),
-        h if h < 300.0 => (x, 0.0, c),
-        _ => (c, 0.0, x),
-    };
-
-    let r = ((r1 + m) * 255.0).round() as u8;
-    let g = ((g1 + m) * 255.0).round() as u8;
-    let b = ((b1 + m) * 255.0).round() as u8;
-
-    (r, g, b)
-}
-
-fn get_color_gradient(min: f64, max: f64, value: f64) -> String {
-    let clamped = value.clamp(min, max);
-    let ratio = if (max - min).abs() < f64::EPSILON {
-        0.5
-    } else {
-        (clamped - min) / (max - min)
-    };
-
-    // Interpola l'hue da 120° (verde) a 0° (rosso)
-    let hue = 120.0 * (1.0 - ratio); // 120 -> 0
-    let (r, g, b) = hsv_to_rgb(hue, 1.0, 1.0);
-
-    format!("#{:02X}{:02X}{:02X}", r, g, b)
-}
+} */
 
 fn app_startup(application: &gtk::Application) {
 
-    let windows: Vec<NiriWindow>;
-    {
-        let output = Command::new("niri").arg("msg").arg("-j").arg("windows").output();
-        let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
-        // println!("\n{:?}", stdout);
-        windows = serde_json::from_str(&stdout).unwrap();
-    }
-    let workspaces: Vec<NiriWorkspace>;
-    let workspaces_map: HashMap<u8, NiriWorkspace>;
-    {
-        let output = Command::new("niri").arg("msg").arg("-j").arg("workspaces").output();
-        let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
-        // println!("\n{:?}", stdout);
-        workspaces = serde_json::from_str(&stdout).unwrap();
-        workspaces_map = workspaces.into_iter().map(|ws| (ws.id, ws)).collect();
-    }
+    
 
     // Stampa le finestre
     // println!("Finestre aperte:");
@@ -241,6 +190,7 @@ fn app_startup(application: &gtk::Application) {
 
     let history = Rc::new(RefCell::new(load_history(config.prune_history)));
 
+    let (windows, workspaces_map) = get_niri_windows();
     let mut entry_hash_map = load_entries(&config, &history.borrow());
     let entry_windows_hash_map = load_entries_running(&config, windows, workspaces_map);
     // let entry_hash_map2 = entry_windows_hash_map.clone();
