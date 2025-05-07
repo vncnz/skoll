@@ -20,12 +20,8 @@ use gdk::keys::constants;
 use gio::prelude::*;
 use gtk::{
     builders::{
-        BoxBuilder, 
-        LabelBuilder,
-        EntryBuilder, 
-        ListBoxBuilder, 
-        ScrolledWindowBuilder
-    }, prelude::*, Label, ListBoxRow
+        BoxBuilder, EntryBuilder, LabelBuilder, ListBoxBuilder, ScaleBuilder, ScrolledWindowBuilder
+    }, prelude::*, Adjustment, Label, ListBoxRow
 };
 use libc::LC_ALL;
 use std::env::args;
@@ -52,11 +48,14 @@ use history::*;
 mod niri;
 use niri::*;
 
+mod infobox;
+use infobox::*;
+
 use std::process::Command;
 // use std::error::Error;
 use serde_json;
 
-use sysinfo::System;
+use sysinfo::{Disks, System};
 
 use bytesize::ByteSize;
 
@@ -389,19 +388,77 @@ fn app_startup(application: &gtk::Application) {
     second_row.add(&tips_box);
 
 
+    let mut avg_infobox = InfoBox::new(&"", [("Test", 35.0)].to_vec());
+    let mut ram_infobox = InfoBox::new(&"󰍛", vec![("", 0.0), ("", 0.0)]);
 
 
+    let ram_box = BoxBuilder::new()
+        .name("ram_box")
+        .orientation(gtk::Orientation::Vertical)
+        .expand(false)
+        .build();
 
+    let avg_box = BoxBuilder::new()
+        .name("avg_box")
+        .orientation(gtk::Orientation::Vertical)
+        .expand(false)
+        .build();
 
-    let label_sys_avg = Label::new(Some("AVG?"));
-    label_sys_avg.set_margin(10);
+    /*
+        let label_sys_avg1m = LabelBuilder::new().margin(0).label("1m?").build();
+        let label_sys_avg5m = LabelBuilder::new().margin(0).label("5m?").build();
+        let label_sys_avg15m = LabelBuilder::new().margin(0).label("15m?").build();
+        avg_box.add(&label_sys_avg1m);
+        avg_box.add(&label_sys_avg5m);
+        avg_box.add(&label_sys_avg15m);
+    */
     
-    let label_sys_ram = Label::new(Some("RAM?"));
-    label_sys_ram.set_margin(10);
+
+    let label_sys_avg = LabelBuilder::new().margin(10).label("AVG?").build();
+    let label_sys_ram = LabelBuilder::new().margin(10).label("RAM?").build();
+    let label_sys_swap = LabelBuilder::new().margin(10).label("SWAP?").build();
+    let label_sys_disk = LabelBuilder::new().margin(10).label("DISK?").build();
+
+    let memory_adjustment = Adjustment::new(0.0, 0.0, 100.0, 1.0, 10.0, 0.0);
+    let range_sys_ram = 
+        ScaleBuilder::new().orientation(gtk::Orientation::Horizontal).adjustment(&memory_adjustment).draw_value(false).sensitive(false).build();
+    let swap_adjustment = Adjustment::new(0.0, 0.0, 100.0, 1.0, 10.0, 0.0);
+    let range_sys_swap = 
+        ScaleBuilder::new().orientation(gtk::Orientation::Horizontal).adjustment(&swap_adjustment).draw_value(false).sensitive(false).build();
+    let disk_adjustment = Adjustment::new(0.0, 0.0, 100.0, 1.0, 10.0, 0.0);
+    let range_sys_disk = 
+            ScaleBuilder::new().orientation(gtk::Orientation::Horizontal).adjustment(&disk_adjustment).draw_value(false).sensitive(false).build();
+
+    let ram_box_clone = ram_box.clone();
+    // let avg_box_clone = avg_box.clone();
+
+    let label_sys_avg_clone = label_sys_avg.clone();
+    let label_sys_ram_clone = label_sys_ram.clone();
+    let label_sys_swap_clone = label_sys_swap.clone();
+    let range_sys_ram_clone = range_sys_ram.clone();
+    let range_sys_swap_clone = range_sys_swap.clone();
+    
+    let range_sys_disk_clone = range_sys_disk.clone();
+    let label_sys_disk_clone = label_sys_disk.clone();
+
+    extra_info_box.add(&avg_infobox.container);
+    extra_info_box.add(&ram_infobox.container);
+    extra_info_box.add(&avg_box);
+    extra_info_box.add(&label_sys_avg);
+    // extra_info_box.add(&label_sys_ram_range);
+    // extra_info_box.add(&label_sys_swap_range);
+    ram_box.add(&range_sys_ram);
+    ram_box.add(&range_sys_swap);
+    extra_info_box.add(&ram_box);
+    extra_info_box.add(&label_sys_ram);
+    extra_info_box.add(&label_sys_swap);
+    extra_info_box.add(&range_sys_disk);
+    extra_info_box.add(&label_sys_disk);
 
     enum SysUpdate {
-        LoadAvg(String),
+        LoadAvg(String, String, String),
         RAM(u64, u64, u64, u64),
+        Disk(String, String, u64, u64),
         Error(String)
     }
 
@@ -409,7 +466,7 @@ fn app_startup(application: &gtk::Application) {
     fn get_load_avg() -> SysUpdate {
         if let Ok(output) = std::fs::read_to_string("/proc/loadavg") {
             let parts: Vec<&str> = output.split_whitespace().collect();
-            SysUpdate::LoadAvg(format!("{} {} {} 󰬢", parts[0], parts[1], parts[2]))
+            SysUpdate::LoadAvg(parts[0].to_string(), parts[1].to_string(), parts[2].to_string())
         } else {
             SysUpdate::Error("Errore".into())
         }
@@ -421,27 +478,70 @@ fn app_startup(application: &gtk::Application) {
 
         SysUpdate::RAM(sys.total_memory(), sys.used_memory(), sys.total_swap(), sys.used_swap())
     }
+
+    fn get_disk_info() -> SysUpdate {
+        let disks = Disks::new_with_refreshed_list();
+        for disk in &disks {
+            if (disk as &sysinfo::Disk).mount_point() == std::path::Path::new("/") {
+                if let Some(name_str) = (disk as &sysinfo::Disk).name().to_str() {
+                    if let Some(mount_str) = (disk as &sysinfo::Disk).mount_point().to_str() {
+                        return SysUpdate::Disk(
+                            name_str.to_string(),
+                            mount_str.to_string(),
+                            (disk as &sysinfo::Disk).available_space(),
+                            (disk as &sysinfo::Disk).total_space()
+                        )
+                    }
+                }
+            }
+        }
+        SysUpdate::Error("Disk not found".to_string())
+    }
     
 
     let (sender, receiver) = glib::MainContext::channel::<SysUpdate>(glib::PRIORITY_DEFAULT);
 
-    let label_sys_avg_clone = label_sys_avg.clone();
-    let label_sys_ram_clone = label_sys_ram.clone();
     // In main thread: connessione all'aggiornamento
     receiver.attach(None, move |info: SysUpdate| {
         match info {
-            SysUpdate::LoadAvg(info) => label_sys_avg_clone.set_text(&info),
+            SysUpdate::LoadAvg(m1, m5, m15) => label_sys_avg_clone.set_text(&format!("󰬢 {} {} {}", m1, m5, m15)),
             SysUpdate::RAM(tm, um, ts, uw) => {
-                let umh = ByteSize::b(um).display().iec().to_string();
+                // let umh = ByteSize::b(um).display().iec().to_string();
                 let tmh = ByteSize::b(tm).display().iec().to_string();
                 let tsh = ByteSize::b(ts).display().iec().to_string();
-                let uwh = ByteSize::b(uw).display().iec().to_string();
-                let memory_ratio = (um as f64 / tm as f64);
-                let color = get_color_gradient(65.0, 90.0, memory_ratio * 100.0);
-                label_sys_ram_clone.set_markup(&format!("<span foreground=\"{}\">RAM: {} / {} ({:.2}%) SWAP: {} / {} ({:.2}%)</span>", color, umh, tmh, memory_ratio * 100.0, uwh, tsh, (uw as f64 / ts as f64) * 100.0));
-                // label_sys_ram_clone.set_text(&format!("RAM: {} / {} ({:.2}%) SWAP: {} / {} ({:.2}%)", umh, tmh, (um as f64 / tm as f64) * 100.0, uwh, tsh, (uw as f64 / ts as f64) * 100.0))
+                // let uwh = ByteSize::b(uw).display().iec().to_string();
+                let memory_ratio = um as f64 / tm as f64;
+                let memory_color = get_color_gradient(65.0, 90.0, memory_ratio * 100.0);
+                label_sys_ram_clone.set_markup(&format!("<span foreground=\"{}\"> {:.0}% of {}</span>", memory_color, memory_ratio * 100.0, tmh));
+
+                range_sys_ram_clone.set_value(memory_ratio * 100.0);
+                apply_scale_color(&range_sys_ram_clone, &memory_color);
+
+                let swap_ratio = uw as f64 / ts as f64;
+                let swap_color = get_color_gradient(40.0, 90.0, swap_ratio * 100.0);
+                // label_sys_swap_clone.set_markup(&format!("<span foreground=\"{}\">󰍛 {:.0}% of {}</span>", swap_color, swap_ratio * 100.0, tsh));
+                label_sys_swap_clone.set_text(&format!("󰍛 {:.0}% of {}", swap_ratio * 100.0, tsh));
+
+                range_sys_swap_clone.set_value(swap_ratio * 100.0);
+                apply_scale_color(&range_sys_swap_clone, &swap_color);
+
+                ram_box_clone.set_tooltip_text(Some(&format!(" {:.0}% of {}\n󰍛 {:.0}% of {}", memory_ratio * 100.0, tmh, swap_ratio * 100.0, tsh)));
+
+                ram_infobox.set_color(&memory_color);
+                ram_infobox.update_data([("RAM", memory_ratio * 100.0), ("SWAP", swap_ratio * 100.0)].to_vec());
             },
-            SysUpdate::Error(error) => {}
+            SysUpdate::Disk(name, _mount_point, avb, total) => {
+                let totalh = ByteSize::b(total).display().iec().to_string();
+                let disk_ratio = (total - avb) as f64 / total as f64;
+                let disk_color = get_color_gradient(50.0, 90.0, disk_ratio * 100.0);
+                range_sys_disk_clone.set_value(disk_ratio * 100.0);
+                apply_scale_color(&range_sys_disk_clone, &disk_color);
+                label_sys_disk_clone.set_markup(&format!("<span foreground=\"{}\">󰋊 {:.0}% of {} on {}</span>", disk_color, disk_ratio * 100.0, totalh, name));
+
+                avg_infobox.set_color(&disk_color);
+                avg_infobox.update_data([("Test2", disk_ratio * 100.0)].to_vec());
+            },
+            SysUpdate::Error(_error) => {}
         }
         // sysdata.loadavg = Some(info);
         // println!("\n\n\n\n{}\n\n\n\n", sysdata.loadavg.unwrap_or_default());
@@ -450,6 +550,7 @@ fn app_startup(application: &gtk::Application) {
 
     // In un altro thread: aggiornamento periodico
     std::thread::spawn(move || {
+        sender.send(get_disk_info()).expect("Send failed");
         loop {
             sender.send(get_load_avg()).expect("Send failed");
             sender.send(get_ram_info()).expect("Send failed");
@@ -457,9 +558,6 @@ fn app_startup(application: &gtk::Application) {
         }
     });
 
-    // vbox0.add(&label_sys_avg);
-    extra_info_box.add(&label_sys_avg);
-    extra_info_box.add(&label_sys_ram);
     window.set_child(Some(&container));
 
     if let Some(display) = gdk::Display::default() {

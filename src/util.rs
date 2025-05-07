@@ -19,7 +19,8 @@ use crate::consts::*;
 use freedesktop_entry_parser::parse_entry;
 use gio::{prelude::AppInfoExt, AppInfo};
 use glib::{shell_parse_argv, GString, ObjectExt};
-use gtk::{prelude::CssProviderExt, CssProvider};
+use gtk::traits::{StyleContextExt, WidgetExt};
+use gtk::{prelude::CssProviderExt, CssProvider, StyleContext, STYLE_PROVIDER_PRIORITY_USER};
 use std::path::PathBuf;
 use std::process::{id, Command};
 use shlex::Shlex;
@@ -191,4 +192,27 @@ pub fn get_color_gradient(min: f64, max: f64, value: f64) -> String {
     let (r, g, b) = hsv_to_rgb(hue, 1.0, 1.0);
 
     format!("#{:02X}{:02X}{:02X}", r, g, b)
+}
+
+pub fn apply_scale_color(scale: &gtk::Scale, hex_color: &str) {
+    let css = format!(
+        "
+        scale {{
+            color: {};
+        }}
+        scale trough highlight {{
+            background-color: {};
+        }}
+        ",
+        hex_color, hex_color
+    );
+
+    let provider = CssProvider::new();
+    provider.load_from_data(css.as_bytes()).expect("CSS non valido");
+
+    StyleContext::add_provider(
+        &scale.style_context(),
+        &provider,
+        STYLE_PROVIDER_PRIORITY_USER,
+    );
 }
