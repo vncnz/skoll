@@ -388,7 +388,7 @@ fn app_startup(application: &gtk::Application) {
     second_row.add(&tips_box);
 
 
-    let mut avg_infobox = InfoBox::new(&"", [("Test", 35.0)].to_vec());
+    let mut avg_infobox = InfoBox::new(&"", [("1m", 0.0), ("5m", 0.0), ("15m", 0.0)].to_vec());
     let mut ram_infobox = InfoBox::new(&"󰍛", vec![("", 0.0), ("", 0.0)]);
 
 
@@ -456,7 +456,7 @@ fn app_startup(application: &gtk::Application) {
     extra_info_box.add(&label_sys_disk);
 
     enum SysUpdate {
-        LoadAvg(String, String, String),
+        LoadAvg(f64, f64, f64),
         RAM(u64, u64, u64, u64),
         Disk(String, String, u64, u64),
         Error(String)
@@ -466,7 +466,7 @@ fn app_startup(application: &gtk::Application) {
     fn get_load_avg() -> SysUpdate {
         if let Ok(output) = std::fs::read_to_string("/proc/loadavg") {
             let parts: Vec<&str> = output.split_whitespace().collect();
-            SysUpdate::LoadAvg(parts[0].to_string(), parts[1].to_string(), parts[2].to_string())
+            SysUpdate::LoadAvg(parts[0].parse().expect("Error 1m"), parts[1].parse().expect("Error 5m"), parts[2].parse().expect("Error 15m"))
         } else {
             SysUpdate::Error("Errore".into())
         }
@@ -504,7 +504,10 @@ fn app_startup(application: &gtk::Application) {
     // In main thread: connessione all'aggiornamento
     receiver.attach(None, move |info: SysUpdate| {
         match info {
-            SysUpdate::LoadAvg(m1, m5, m15) => label_sys_avg_clone.set_text(&format!("󰬢 {} {} {}", m1, m5, m15)),
+            SysUpdate::LoadAvg(m1, m5, m15) => {
+                label_sys_avg_clone.set_text(&format!("󰬢 {} {} {}", m1, m5, m15));
+                avg_infobox.update_data([("1m", m1 * 100.0), ("5m", m5 * 100.0), ("15m", m15 * 100.0)].to_vec());
+            },
             SysUpdate::RAM(tm, um, ts, uw) => {
                 // let umh = ByteSize::b(um).display().iec().to_string();
                 let tmh = ByteSize::b(tm).display().iec().to_string();
@@ -537,9 +540,6 @@ fn app_startup(application: &gtk::Application) {
                 range_sys_disk_clone.set_value(disk_ratio * 100.0);
                 apply_scale_color(&range_sys_disk_clone, &disk_color);
                 label_sys_disk_clone.set_markup(&format!("<span foreground=\"{}\">󰋊 {:.0}% of {} on {}</span>", disk_color, disk_ratio * 100.0, totalh, name));
-
-                avg_infobox.set_color(&disk_color);
-                avg_infobox.update_data([("Test2", disk_ratio * 100.0)].to_vec());
             },
             SysUpdate::Error(_error) => {}
         }

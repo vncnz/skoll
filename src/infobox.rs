@@ -22,9 +22,10 @@ impl InfoBox {
             .halign(gtk::Align::Start)
             .build();
         container.add(&icon);
+        icon.style_context().add_class("icon");
         // container.style_context().add_class("multirow");
 
-        let data_column = GtkBox::new(Orientation::Vertical, 4);
+        let data_column = GtkBox::new(Orientation::Vertical, 0);
         container.add(&data_column);
 
         let rows = Vec::new();
@@ -45,12 +46,12 @@ impl InfoBox {
             let adjustment = Adjustment::new(0.0, 0.0, 100.0, 1.0, 10.0, 0.0);
             let scale = Scale::new(gtk::Orientation::Horizontal, Some(&adjustment));
             scale.set_draw_value(false);
-            scale.set_hexpand(true);
+            scale.set_hexpand(false);
     
             let label = Label::new(None);
             label.set_xalign(0.0);
     
-            let row = GtkBox::new(Orientation::Horizontal, 4);
+            let row = GtkBox::new(Orientation::Horizontal, 0);
             row.add(&scale);
             row.add(&label);
             self.data_column.add(&row);
