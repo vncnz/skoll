@@ -51,6 +51,12 @@ use niri::*;
 mod infobox;
 use infobox::*;
 
+mod inforow;
+use inforow::*;
+
+mod infogrid;
+use infogrid::*;
+
 use std::process::Command;
 // use std::error::Error;
 use serde_json;
@@ -135,6 +141,21 @@ fn app_startup(application: &gtk::Application) {
         .valign(gtk::Align::Fill)
         .build();
 
+    let extra_info_rows = BoxBuilder::new()
+        .name("extra_info_rows")
+        .orientation(gtk::Orientation::Vertical)
+        // .width_request(config.width)
+        // .height_request(config.height)
+        //.margin_top(config.margin_top)
+        //.margin_end(config.margin_right)
+        //.margin_bottom(config.margin_bottom)
+        //.margin_start(config.margin_left)
+        .vexpand(false)
+        .hexpand(false)
+        .halign(gtk::Align::Center)
+        .valign(gtk::Align::Fill)
+        .build();
+
     let second_row = BoxBuilder::new()
         .name("second_row")
         .orientation(gtk::Orientation::Horizontal)
@@ -170,7 +191,8 @@ fn app_startup(application: &gtk::Application) {
         .build();
 
     second_row.add(&search_container);    
-    container.add(&extra_info_box);
+    container.add(&extra_info_box); 
+    container.add(&extra_info_rows);
     container.add(&second_row);
 
     // vbox.set_css_classes(&["debug"]);
@@ -391,6 +413,8 @@ fn app_startup(application: &gtk::Application) {
     let mut avg_infobox = InfoBox::new(&"󰬢", [("1m", 0.0, None), ("5m", 0.0, None), ("15m", 0.0, None)].to_vec());
     let mut ram_infobox = InfoBox::new(&"󰍛", vec![("RAM?", 0.0, None), ("SWAP?", 0.0, None)]);
 
+    let mut avg_inforow = InfoRow::new("󰬢", "Load avg", "[0.1 0.2 0.3]");
+
 
     let ram_box = BoxBuilder::new()
         .name("ram_box")
@@ -414,22 +438,34 @@ fn app_startup(application: &gtk::Application) {
     */
     
 
-    let label_sys_avg = LabelBuilder::new().margin(10).label("AVG?").build();
-    let label_sys_ram = LabelBuilder::new().margin(10).label("RAM?").build();
-    let label_sys_swap = LabelBuilder::new().margin(10).label("SWAP?").build();
+    // let label_sys_avg = LabelBuilder::new().margin(10).label("AVG?").build();
+    // let label_sys_ram = LabelBuilder::new().margin(10).label("RAM?").build();
+    // let label_sys_swap = LabelBuilder::new().margin(10).label("SWAP?").build();
     let label_sys_disk = LabelBuilder::new().margin(10).label("DISK?").build();
 
     let memory_adjustment = Adjustment::new(0.0, 0.0, 100.0, 1.0, 10.0, 0.0);
-    let range_sys_ram = 
-        ScaleBuilder::new().orientation(gtk::Orientation::Horizontal).adjustment(&memory_adjustment).draw_value(false).sensitive(false).build();
+    // let range_sys_ram = ScaleBuilder::new().orientation(gtk::Orientation::Horizontal).adjustment(&memory_adjustment).draw_value(false).sensitive(false).build();
     let swap_adjustment = Adjustment::new(0.0, 0.0, 100.0, 1.0, 10.0, 0.0);
-    let range_sys_swap = 
-        ScaleBuilder::new().orientation(gtk::Orientation::Horizontal).adjustment(&swap_adjustment).draw_value(false).sensitive(false).build();
+    // let range_sys_swap = ScaleBuilder::new().orientation(gtk::Orientation::Horizontal).adjustment(&swap_adjustment).draw_value(false).sensitive(false).build();
     let disk_adjustment = Adjustment::new(0.0, 0.0, 100.0, 1.0, 10.0, 0.0);
-    let range_sys_disk = 
-            ScaleBuilder::new().orientation(gtk::Orientation::Horizontal).adjustment(&disk_adjustment).draw_value(false).sensitive(false).build();
+    let range_sys_disk = ScaleBuilder::new().orientation(gtk::Orientation::Horizontal).adjustment(&disk_adjustment).draw_value(false).sensitive(false).build();
 
-    let ram_box_clone = ram_box.clone();
+    let info_items = vec![
+        ("ram".into(), "RAM".into(), "/path/to/icons/ram.png".into()),
+        ("cpu".into(), "CPU".into(), "/path/to/icons/cpu.png".into()),
+        ("vol".into(), "Vol".into(), "/path/to/icons/volume.png".into()),
+    ];
+
+    let info_grid = InfoGrid::new(&info_items);
+    container.add(info_grid.widget());
+
+    // Altrove, ad esempio in un async task:
+    info_grid.update_value("ram", "2.9 GiB");
+    // info_grid.update_icon("vol", "/path/to/icons/volume-muted.png");
+    info_grid.update_color("cpu", "orange");
+
+
+    // let ram_box_clone = ram_box.clone();
     // let avg_box_clone = avg_box.clone();
 
     // let label_sys_avg_clone = label_sys_avg.clone();
@@ -443,6 +479,8 @@ fn app_startup(application: &gtk::Application) {
 
     extra_info_box.add(&avg_infobox.container);
     extra_info_box.add(&ram_infobox.container);
+
+    extra_info_rows.add(&avg_inforow.container);
     // extra_info_box.add(&avg_box);
     // extra_info_box.add(&label_sys_avg);
     // extra_info_box.add(&label_sys_ram_range);
