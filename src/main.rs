@@ -1,5 +1,6 @@
 /*
 Copyright (C) 2020 Dorian Rudolph
+Modified by Vincenzo Minolfi for skoll, a fork of sirula, in 2025.
 
 sirula is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -13,6 +14,7 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with sirula.  If not, see <https://www.gnu.org/licenses/>.
+
 */
 
 use fuzzy_matcher::skim::SkimMatcherV2;
@@ -24,6 +26,7 @@ use gtk::{
     }, prelude::*, Adjustment, Label, ListBoxRow
 };
 use libc::LC_ALL;
+use serde_derive::Deserialize;
 use std::env::args;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
@@ -68,6 +71,14 @@ use bytesize::ByteSize;
 /* pub fn get_from_map<'a, K: Eq + std::hash::Hash, V>(map: &'a HashMap<K, V>, key: &K) -> Option<&'a V> {
     map.get(key) // .expect(&format!("Key not found in map"))
 } */
+
+#[derive(Deserialize)]
+pub struct WeatherObj {
+    pub icon_name: String,
+    pub temp: u32,
+    pub temp_real: u32,
+    pub temp_unit: String
+}
 
 fn app_startup(application: &gtk::Application) {
 
@@ -410,13 +421,40 @@ fn app_startup(application: &gtk::Application) {
     second_row.add(&tips_box);
 
 
-    let mut avg_infobox = InfoBox::new(&"󰬢", [("1m", 0.0, None), ("5m", 0.0, None), ("15m", 0.0, None)].to_vec());
-    let mut ram_infobox = InfoBox::new(&"󰍛", vec![("RAM?", 0.0, None), ("SWAP?", 0.0, None)]);
-
-    let mut avg_inforow = InfoRow::new("󰬢", "Load avg", "[0.1 0.2 0.3]");
 
 
-    let ram_box = BoxBuilder::new()
+
+    let info_items = vec![
+        ("loadavg".into(), "Load avg".into(), "󰬢".into(), "".into()),
+        ("ram".into(), "RAM".into(), "󰍛".into(), "".into()),
+        ("swap".into(), "SWAP".into(), "󰍛".into(), "".into()),
+        ("disk".into(), "Main disk".into(), "󰋊".into(), "".into()),
+        ("weather".into(), "Weather".into(), "".into(), "".into()),
+        // ("cpu".into(), "CPU".into(), "IC".into(), "/path/to/icons/cpu.png".into()),
+        ("vol".into(), "Vol".into(), "IC".into(), "/path/to/icons/volume.png".into()),
+    ];
+    let info_grid = InfoGrid::new(&info_items);
+    second_row.add(info_grid.widget());
+
+    // Altrove, ad esempio in un async task:
+    // info_grid.update_value("ram", "2.9 GiB");
+    // info_grid.update_icon("vol", "/path/to/icons/volume-muted.png");
+    // info_grid.update_color("cpu", "orange");
+
+
+
+
+
+
+
+
+
+    // let mut avg_infobox = InfoBox::new(&"󰬢", [("1m", 0.0, None), ("5m", 0.0, None), ("15m", 0.0, None)].to_vec());
+    // let mut ram_infobox = InfoBox::new(&"󰍛", vec![("RAM?", 0.0, None), ("SWAP?", 0.0, None)]);
+    // let mut avg_inforow = InfoRow::new("󰬢", "Load avg", "[0.1 0.2 0.3]");
+
+
+    /* let ram_box = BoxBuilder::new()
         .name("ram_box")
         .orientation(gtk::Orientation::Vertical)
         .expand(false)
@@ -426,7 +464,7 @@ fn app_startup(application: &gtk::Application) {
         .name("avg_box")
         .orientation(gtk::Orientation::Vertical)
         .expand(false)
-        .build();
+        .build(); */
 
     /*
         let label_sys_avg1m = LabelBuilder::new().margin(0).label("1m?").build();
@@ -441,29 +479,14 @@ fn app_startup(application: &gtk::Application) {
     // let label_sys_avg = LabelBuilder::new().margin(10).label("AVG?").build();
     // let label_sys_ram = LabelBuilder::new().margin(10).label("RAM?").build();
     // let label_sys_swap = LabelBuilder::new().margin(10).label("SWAP?").build();
-    let label_sys_disk = LabelBuilder::new().margin(10).label("DISK?").build();
+    // let label_sys_disk = LabelBuilder::new().margin(10).label("DISK?").build();
 
-    let memory_adjustment = Adjustment::new(0.0, 0.0, 100.0, 1.0, 10.0, 0.0);
+    // let memory_adjustment = Adjustment::new(0.0, 0.0, 100.0, 1.0, 10.0, 0.0);
     // let range_sys_ram = ScaleBuilder::new().orientation(gtk::Orientation::Horizontal).adjustment(&memory_adjustment).draw_value(false).sensitive(false).build();
-    let swap_adjustment = Adjustment::new(0.0, 0.0, 100.0, 1.0, 10.0, 0.0);
+    // let swap_adjustment = Adjustment::new(0.0, 0.0, 100.0, 1.0, 10.0, 0.0);
     // let range_sys_swap = ScaleBuilder::new().orientation(gtk::Orientation::Horizontal).adjustment(&swap_adjustment).draw_value(false).sensitive(false).build();
-    let disk_adjustment = Adjustment::new(0.0, 0.0, 100.0, 1.0, 10.0, 0.0);
-    let range_sys_disk = ScaleBuilder::new().orientation(gtk::Orientation::Horizontal).adjustment(&disk_adjustment).draw_value(false).sensitive(false).build();
-
-    let info_items = vec![
-        ("ram".into(), "RAM".into(), "/path/to/icons/ram.png".into()),
-        ("cpu".into(), "CPU".into(), "/path/to/icons/cpu.png".into()),
-        ("vol".into(), "Vol".into(), "/path/to/icons/volume.png".into()),
-    ];
-
-    let info_grid = InfoGrid::new(&info_items);
-    container.add(info_grid.widget());
-
-    // Altrove, ad esempio in un async task:
-    info_grid.update_value("ram", "2.9 GiB");
-    // info_grid.update_icon("vol", "/path/to/icons/volume-muted.png");
-    info_grid.update_color("cpu", "orange");
-
+    // let disk_adjustment = Adjustment::new(0.0, 0.0, 100.0, 1.0, 10.0, 0.0);
+    // let range_sys_disk = ScaleBuilder::new().orientation(gtk::Orientation::Horizontal).adjustment(&disk_adjustment).draw_value(false).sensitive(false).build();
 
     // let ram_box_clone = ram_box.clone();
     // let avg_box_clone = avg_box.clone();
@@ -474,13 +497,13 @@ fn app_startup(application: &gtk::Application) {
     // let range_sys_ram_clone = range_sys_ram.clone();
     // let range_sys_swap_clone = range_sys_swap.clone();
     
-    let range_sys_disk_clone = range_sys_disk.clone();
-    let label_sys_disk_clone = label_sys_disk.clone();
+    // let range_sys_disk_clone = range_sys_disk.clone();
+    // let label_sys_disk_clone = label_sys_disk.clone();
 
-    extra_info_box.add(&avg_infobox.container);
-    extra_info_box.add(&ram_infobox.container);
+    // extra_info_box.add(&avg_infobox.container);
+    // extra_info_box.add(&ram_infobox.container);
 
-    extra_info_rows.add(&avg_inforow.container);
+    // extra_info_rows.add(&avg_inforow.container);
     // extra_info_box.add(&avg_box);
     // extra_info_box.add(&label_sys_avg);
     // extra_info_box.add(&label_sys_ram_range);
@@ -490,13 +513,14 @@ fn app_startup(application: &gtk::Application) {
     // extra_info_box.add(&ram_box);
     // extra_info_box.add(&label_sys_ram);
     // extra_info_box.add(&label_sys_swap);
-    extra_info_box.add(&range_sys_disk);
-    extra_info_box.add(&label_sys_disk);
+    // extra_info_box.add(&range_sys_disk);
+    // extra_info_box.add(&label_sys_disk);
 
     enum SysUpdate {
         LoadAvg(f64, f64, f64),
         RAM(u64, u64, u64, u64),
         Disk(String, String, u64, u64),
+        Weather(String, String),
         Error(String)
     }
 
@@ -535,6 +559,18 @@ fn app_startup(application: &gtk::Application) {
         }
         SysUpdate::Error("Disk not found".to_string())
     }
+
+    fn get_weather () -> SysUpdate {
+        // use std::process::Command;
+
+        let mut cmd = Command::new("home/vncnz/.config/eww/scripts/meteo.sh");
+        cmd.arg("'Desenzano Del Garda'").arg("45.457692").arg("10.570684");
+        // let data = cmd.output().expect("failed to execute weather process");
+        let stdout = String::from_utf8(cmd.output().unwrap().stdout).unwrap();
+        let weather: WeatherObj = serde_json::from_str(&stdout).unwrap();
+        // let hello_2 = echo_hello.output().expect("failed to execute process");
+        SysUpdate::Weather(weather.icon_name, format!("{}{}", weather.temp, weather.temp_unit))
+    }
     
 
     let (sender, receiver) = glib::MainContext::channel::<SysUpdate>(glib::PRIORITY_DEFAULT);
@@ -544,7 +580,7 @@ fn app_startup(application: &gtk::Application) {
         match info {
             SysUpdate::LoadAvg(m1, m5, m15) => {
                 // label_sys_avg_clone.set_text(&format!("󰬢 {} {} {}", m1, m5, m15));
-                let max = f64::max(m1, f64::max(m5, m15));
+                /* let max = f64::max(m1, f64::max(m5, m15));
                 let min = f64::min(m1, f64::min(m5, m15));
                 let r = Some("#FF0000".to_string());
                 let y = Some("#FFFF00".to_string());
@@ -556,7 +592,11 @@ fn app_startup(application: &gtk::Application) {
                     (&*format!("{}", m1), m1/max * 100.0, m1color),
                     (&*format!("{}", m5), m5/max * 100.0, m5color),
                     (&*format!("{}", m15), m15/max * 100.0, m15color)
-                ].to_vec());
+                ].to_vec()); */
+                let color = get_color_gradient(1., 3., m1/m5);
+                info_grid
+                    .update_value("loadavg", &*format!("[{:.2} {:.2} {:.2}]", m1, m5, m15))
+                    .update_color("loadavg", &color);
             },
             SysUpdate::RAM(tm, um, ts, us) => {
                 // let umh = ByteSize::b(um).display().iec().to_string();
@@ -564,7 +604,7 @@ fn app_startup(application: &gtk::Application) {
                 let tsh = ByteSize::b(ts).display().iec().to_string();
                 // let uwh = ByteSize::b(uw).display().iec().to_string();
                 let memory_ratio = um as f64 / tm as f64;
-                let memory_color = get_color_gradient(65.0, 90.0, memory_ratio * 100.0);
+                let memory_color = get_color_gradient(50.0, 90.0, memory_ratio * 100.0);
 
                 let swap_ratio = us as f64 / ts as f64;
                 let swap_color = get_color_gradient(40.0, 90.0, swap_ratio * 100.0);
@@ -583,19 +623,33 @@ fn app_startup(application: &gtk::Application) {
 
                 ram_box_clone.set_tooltip_text(Some(&format!(" {:.0}% of {}\n󰍛 {:.0}% of {}", memory_ratio * 100.0, tmh, swap_ratio * 100.0, tsh))); */
 
-                ram_infobox.update_data([
-                    (&*format!("{:.0}% of {}", memory_ratio * 100.0, tmh), memory_ratio * 100.0, Some(memory_color)),
-                    (&*format!("{:.0}% of {}", swap_ratio * 100.0, tsh), 50.0, Some(swap_color))
-                ].to_vec());
+                /* ram_infobox.update_data([
+                    (&*format!("{:.0}% of {}", memory_ratio * 100.0, tmh), memory_ratio * 100.0, Some(memory_color.clone())),
+                    (&*format!("{:.0}% of {}", swap_ratio * 100.0, tsh), 50.0, Some(swap_color.clone()))
+                ].to_vec()); */
+
+                info_grid.update_value("ram", &*format!("{:.0}% of {}", memory_ratio * 100.0, tmh));
+                info_grid.update_color("ram", &memory_color);
+
+                info_grid.update_value("swap", &*format!("{:.0}% of {}", swap_ratio * 100.0, tsh));
+                info_grid.update_color("swap", &swap_color);
+
                 // ram_infobox.set_color(&memory_color);
             },
             SysUpdate::Disk(name, _mount_point, avb, total) => {
                 let totalh = ByteSize::b(total).display().iec().to_string();
                 let disk_ratio = (total - avb) as f64 / total as f64;
                 let disk_color = get_color_gradient(50.0, 90.0, disk_ratio * 100.0);
-                range_sys_disk_clone.set_value(disk_ratio * 100.0);
-                apply_scale_color(&range_sys_disk_clone, &disk_color);
-                label_sys_disk_clone.set_markup(&format!("<span foreground=\"{}\">󰋊 {:.0}% of {} on {}</span>", disk_color, disk_ratio * 100.0, totalh, name));
+                // range_sys_disk_clone.set_value(disk_ratio * 100.0);
+                // apply_scale_color(&range_sys_disk_clone, &disk_color);
+                // label_sys_disk_clone.set_markup(&format!("<span foreground=\"{}\">󰋊 {:.0}% of {} on {}</span>", disk_color, disk_ratio * 100.0, totalh, name));
+
+                info_grid.update_value("disk", &*format!("{:.0}% of {}", disk_ratio * 100.0, totalh));
+                info_grid.update_color("disk", &disk_color);
+            },
+            SysUpdate::Weather(icon, temp_text) => {
+                info_grid.update_value("weather", &temp_text);
+                info_grid.update_path("weather", &format!("/home/vncnz/.config/eww/images/weather/{icon}"));
             },
             SysUpdate::Error(_error) => {}
         }
@@ -605,8 +659,10 @@ fn app_startup(application: &gtk::Application) {
     });
 
     // In un altro thread: aggiornamento periodico
+    // get_weather();
     std::thread::spawn(move || {
         sender.send(get_disk_info()).expect("Send failed");
+        // sender.send(get_weather()).expect("Send failed");
         loop {
             sender.send(get_load_avg()).expect("Send failed");
             sender.send(get_ram_info()).expect("Send failed");
