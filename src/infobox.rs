@@ -13,7 +13,7 @@ pub struct InfoBox {
 }
 
 impl InfoBox {
-    pub fn new(icon_text: &str, data: Vec<(&str, f64)>) -> Self {
+    pub fn new(icon_text: &str, data: Vec<(&str, f64, Option<String>)>) -> Self {
         let container = GtkBox::new(Orientation::Horizontal, 8);
         // let icon = Image::from_file(icon_path);
         let icon = LabelBuilder::new()
@@ -40,7 +40,7 @@ impl InfoBox {
         info_box
     }
 
-    pub fn update_data(&mut self, new_data: Vec<(&str, f64)>) {
+    pub fn update_data(&mut self, new_data: Vec<(&str, f64, Option<String>)>) {
         // Se servono più righe, aggiungile
         while self.rows.len() < new_data.len() {
             let adjustment = Adjustment::new(0.0, 0.0, 100.0, 1.0, 10.0, 0.0);
@@ -72,9 +72,10 @@ impl InfoBox {
         } */
     
         // Ora aggiorna i testi e i valori delle righe esistenti
-        for ((scale, label), (text, value)) in self.rows.iter().zip(new_data.iter()) {
+        for ((scale, label), (text, value, color)) in self.rows.iter().zip(new_data.iter()) {
             scale.set_value(*value);
             label.set_text(text);
+            if let Some(color) = color { self.set_color_single(Some(&scale), Some(&label), &color) }
         }
 
         self.update_class_by_row_count();
@@ -83,25 +84,29 @@ impl InfoBox {
 
     pub fn set_color(&self, color: &str) {
         for (scale, label) in &self.rows {
-            let css = format!(
-                "
-                scale highlight {{
-                    background-color: {};
-                }}
-                scale slider {{
-                    all: unset;
-                }}
-                label {{
-                    color: {};
-                }}
-                ", color, color);
-
-            let provider = gtk::CssProvider::new();
-            provider.load_from_data(css.as_bytes()).unwrap();
-
-            scale.style_context().add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
-            label.style_context().add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
+            self.set_color_single(Some(&scale), Some(&label), color);
         }
+    }
+
+    pub fn set_color_single(&self, scale: Option<&Scale>, label: Option<&Label>, color: &str) {
+        let css = format!(
+            "
+            scale highlight {{
+                background-color: {};
+            }}
+            scale slider {{
+                all: unset;
+            }}
+            label {{
+                color: {};
+            }}
+            ", color, color);
+
+        let provider = gtk::CssProvider::new();
+        provider.load_from_data(css.as_bytes()).unwrap();
+
+        if let Some(scale_) = scale { scale_.style_context().add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER) };
+        if let Some(label_) = label { label_.style_context().add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER) };
     }
 
     pub fn update_class_by_row_count(&self) {

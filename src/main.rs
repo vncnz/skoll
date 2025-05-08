@@ -388,8 +388,8 @@ fn app_startup(application: &gtk::Application) {
     second_row.add(&tips_box);
 
 
-    let mut avg_infobox = InfoBox::new(&"", [("1m", 0.0), ("5m", 0.0), ("15m", 0.0)].to_vec());
-    let mut ram_infobox = InfoBox::new(&"󰍛", vec![("", 0.0), ("", 0.0)]);
+    let mut avg_infobox = InfoBox::new(&"󰬢", [("1m", 0.0, None), ("5m", 0.0, None), ("15m", 0.0, None)].to_vec());
+    let mut ram_infobox = InfoBox::new(&"󰍛", vec![("RAM?", 0.0, None), ("SWAP?", 0.0, None)]);
 
 
     let ram_box = BoxBuilder::new()
@@ -432,26 +432,26 @@ fn app_startup(application: &gtk::Application) {
     let ram_box_clone = ram_box.clone();
     // let avg_box_clone = avg_box.clone();
 
-    let label_sys_avg_clone = label_sys_avg.clone();
-    let label_sys_ram_clone = label_sys_ram.clone();
-    let label_sys_swap_clone = label_sys_swap.clone();
-    let range_sys_ram_clone = range_sys_ram.clone();
-    let range_sys_swap_clone = range_sys_swap.clone();
+    // let label_sys_avg_clone = label_sys_avg.clone();
+    // let label_sys_ram_clone = label_sys_ram.clone();
+    // let label_sys_swap_clone = label_sys_swap.clone();
+    // let range_sys_ram_clone = range_sys_ram.clone();
+    // let range_sys_swap_clone = range_sys_swap.clone();
     
     let range_sys_disk_clone = range_sys_disk.clone();
     let label_sys_disk_clone = label_sys_disk.clone();
 
     extra_info_box.add(&avg_infobox.container);
     extra_info_box.add(&ram_infobox.container);
-    extra_info_box.add(&avg_box);
-    extra_info_box.add(&label_sys_avg);
+    // extra_info_box.add(&avg_box);
+    // extra_info_box.add(&label_sys_avg);
     // extra_info_box.add(&label_sys_ram_range);
     // extra_info_box.add(&label_sys_swap_range);
-    ram_box.add(&range_sys_ram);
-    ram_box.add(&range_sys_swap);
-    extra_info_box.add(&ram_box);
-    extra_info_box.add(&label_sys_ram);
-    extra_info_box.add(&label_sys_swap);
+    // ram_box.add(&range_sys_ram);
+    // ram_box.add(&range_sys_swap);
+    // extra_info_box.add(&ram_box);
+    // extra_info_box.add(&label_sys_ram);
+    // extra_info_box.add(&label_sys_swap);
     extra_info_box.add(&range_sys_disk);
     extra_info_box.add(&label_sys_disk);
 
@@ -505,33 +505,51 @@ fn app_startup(application: &gtk::Application) {
     receiver.attach(None, move |info: SysUpdate| {
         match info {
             SysUpdate::LoadAvg(m1, m5, m15) => {
-                label_sys_avg_clone.set_text(&format!("󰬢 {} {} {}", m1, m5, m15));
-                avg_infobox.update_data([("1m", m1 * 100.0), ("5m", m5 * 100.0), ("15m", m15 * 100.0)].to_vec());
+                // label_sys_avg_clone.set_text(&format!("󰬢 {} {} {}", m1, m5, m15));
+                let max = f64::max(m1, f64::max(m5, m15));
+                let min = f64::min(m1, f64::min(m5, m15));
+                let r = Some("#FF0000".to_string());
+                let y = Some("#FFFF00".to_string());
+                let g = Some("#00FF00".to_string());
+                let m1color = if m1 == max { r.clone() } else { if m1 == min { g.clone() } else { y.clone() }};
+                let m5color = if m5 == max { r.clone() } else { if m5 == min { g.clone() } else { y.clone() }};
+                let m15color = if m15 == max { r } else { if m15 == min { g } else { y }};
+                avg_infobox.update_data([
+                    (&*format!("{}", m1), m1/max * 100.0, m1color),
+                    (&*format!("{}", m5), m5/max * 100.0, m5color),
+                    (&*format!("{}", m15), m15/max * 100.0, m15color)
+                ].to_vec());
             },
-            SysUpdate::RAM(tm, um, ts, uw) => {
+            SysUpdate::RAM(tm, um, ts, us) => {
                 // let umh = ByteSize::b(um).display().iec().to_string();
                 let tmh = ByteSize::b(tm).display().iec().to_string();
                 let tsh = ByteSize::b(ts).display().iec().to_string();
                 // let uwh = ByteSize::b(uw).display().iec().to_string();
                 let memory_ratio = um as f64 / tm as f64;
                 let memory_color = get_color_gradient(65.0, 90.0, memory_ratio * 100.0);
-                label_sys_ram_clone.set_markup(&format!("<span foreground=\"{}\"> {:.0}% of {}</span>", memory_color, memory_ratio * 100.0, tmh));
+
+                let swap_ratio = us as f64 / ts as f64;
+                let swap_color = get_color_gradient(40.0, 90.0, swap_ratio * 100.0);
+
+                /* label_sys_ram_clone.set_markup(&format!("<span foreground=\"{}\"> {:.0}% of {}</span>", memory_color, memory_ratio * 100.0, tmh));
 
                 range_sys_ram_clone.set_value(memory_ratio * 100.0);
                 apply_scale_color(&range_sys_ram_clone, &memory_color);
 
-                let swap_ratio = uw as f64 / ts as f64;
-                let swap_color = get_color_gradient(40.0, 90.0, swap_ratio * 100.0);
+                
                 // label_sys_swap_clone.set_markup(&format!("<span foreground=\"{}\">󰍛 {:.0}% of {}</span>", swap_color, swap_ratio * 100.0, tsh));
                 label_sys_swap_clone.set_text(&format!("󰍛 {:.0}% of {}", swap_ratio * 100.0, tsh));
 
                 range_sys_swap_clone.set_value(swap_ratio * 100.0);
                 apply_scale_color(&range_sys_swap_clone, &swap_color);
 
-                ram_box_clone.set_tooltip_text(Some(&format!(" {:.0}% of {}\n󰍛 {:.0}% of {}", memory_ratio * 100.0, tmh, swap_ratio * 100.0, tsh)));
+                ram_box_clone.set_tooltip_text(Some(&format!(" {:.0}% of {}\n󰍛 {:.0}% of {}", memory_ratio * 100.0, tmh, swap_ratio * 100.0, tsh))); */
 
-                ram_infobox.set_color(&memory_color);
-                ram_infobox.update_data([("RAM", memory_ratio * 100.0), ("SWAP", swap_ratio * 100.0)].to_vec());
+                ram_infobox.update_data([
+                    (&*format!("{:.0}% of {}", memory_ratio * 100.0, tmh), memory_ratio * 100.0, Some(memory_color)),
+                    (&*format!("{:.0}% of {}", swap_ratio * 100.0, tsh), 50.0, Some(swap_color))
+                ].to_vec());
+                // ram_infobox.set_color(&memory_color);
             },
             SysUpdate::Disk(name, _mount_point, avb, total) => {
                 let totalh = ByteSize::b(total).display().iec().to_string();
