@@ -1,6 +1,6 @@
 use gdk_pixbuf::Pixbuf;
-use gtk::{prelude::*, IconSize};
-use gtk::{glib, Align, Grid, Image, Label, Orientation};
+use gtk::prelude::*;
+use gtk::{glib, Align, Grid, Image, Label};
 
 use std::collections::HashMap;
 

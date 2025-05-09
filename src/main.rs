@@ -22,8 +22,8 @@ use gdk::keys::constants;
 use gio::prelude::*;
 use gtk::{
     builders::{
-        BoxBuilder, EntryBuilder, LabelBuilder, ListBoxBuilder, ScaleBuilder, ScrolledWindowBuilder
-    }, prelude::*, Adjustment, Label, ListBoxRow
+        BoxBuilder, EntryBuilder, LabelBuilder, ListBoxBuilder, ScrolledWindowBuilder
+    }, prelude::*, ListBoxRow
 };
 use libc::LC_ALL;
 use serde_derive::Deserialize;
@@ -50,12 +50,6 @@ use history::*;
 
 mod niri;
 use niri::*;
-
-mod infobox;
-use infobox::*;
-
-mod inforow;
-use inforow::*;
 
 mod infogrid;
 use infogrid::*;
@@ -643,7 +637,7 @@ fn app_startup(application: &gtk::Application) {
 
                 // ram_infobox.set_color(&memory_color);
             },
-            SysUpdate::Disk(name, _mount_point, avb, total) => {
+            SysUpdate::Disk(_name, _mount_point, avb, total) => {
                 let totalh = ByteSize::b(total).display().iec().to_string();
                 let disk_ratio = (total - avb) as f64 / total as f64;
                 let disk_color = get_color_gradient(50.0, 90.0, disk_ratio * 100.0);

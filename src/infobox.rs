@@ -1,11 +1,9 @@
 use gtk::prelude::*;
 use gtk::{
-    Box as GtkBox, Orientation, Image, Label, Scale, Adjustment,
-    builders::{
-        BoxBuilder, LabelBuilder, ListBoxBuilder, ScaleBuilder
-    }
+    Box as GtkBox, Orientation, Label, Scale, Adjustment,
+    builders::LabelBuilder
 };
-use std::rc::Rc;
+
 pub struct InfoBox {
     pub container: GtkBox,
     data_column: GtkBox,

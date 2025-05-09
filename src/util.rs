@@ -19,8 +19,7 @@ use crate::consts::*;
 use freedesktop_entry_parser::parse_entry;
 use gio::{prelude::AppInfoExt, AppInfo};
 use glib::{shell_parse_argv, GString, ObjectExt};
-use gtk::traits::{StyleContextExt, WidgetExt};
-use gtk::{prelude::CssProviderExt, CssProvider, StyleContext, STYLE_PROVIDER_PRIORITY_USER};
+use gtk::{prelude::CssProviderExt, CssProvider};
 use std::path::PathBuf;
 use std::process::{id, Command};
 use shlex::Shlex;
@@ -194,7 +193,7 @@ pub fn get_color_gradient(min: f64, max: f64, value: f64) -> String {
     format!("#{:02X}{:02X}{:02X}", r, g, b)
 }
 
-pub fn apply_scale_color(scale: &gtk::Scale, hex_color: &str) {
+/* pub fn apply_scale_color(scale: &gtk::Scale, hex_color: &str) {
     let css = format!(
         "
         scale {{
@@ -215,4 +214,4 @@ pub fn apply_scale_color(scale: &gtk::Scale, hex_color: &str) {
         &provider,
         STYLE_PROVIDER_PRIORITY_USER,
     );
-}
+} */
