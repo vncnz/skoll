@@ -37,7 +37,7 @@ impl InfoGrid {
 
             let icon_label = Label::new(Some(icon_text));
             icon_label.set_halign(Align::Start);
-            icon_label.set_markup(&format!("<span style=\"font-size:{}px\">{}</span>", ICONSIZE, icon_text));
+            icon_label.style_context().add_class("grid-icon");
 
             let label = Label::new(Some(label_text));
             label.set_halign(Align::Start);
