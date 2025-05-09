@@ -524,7 +524,7 @@ fn app_startup(application: &gtk::Application) {
         LoadAvg(f64, f64, f64),
         RAM(u64, u64, u64, u64),
         Disk(String, String, u64, u64),
-        Weather(String, String),
+        Weather(WeatherObj),
         Error(String)
     }
 
@@ -570,7 +570,7 @@ fn app_startup(application: &gtk::Application) {
         println!("\n{:?}", stdout);
         let weather: WeatherObj;
         weather = serde_json::from_str(&stdout).unwrap();
-        SysUpdate::Weather(weather.icon_name, format!("{}{}", weather.temp, weather.temp_unit))
+        SysUpdate::Weather(weather)
     }
     
 
@@ -648,9 +648,10 @@ fn app_startup(application: &gtk::Application) {
                 info_grid.update_value("disk", &*format!("{:.0}% of {}", disk_ratio * 100.0, totalh));
                 info_grid.update_color("disk", &disk_color);
             },
-            SysUpdate::Weather(icon, temp_text) => {
+            SysUpdate::Weather(weather) => {
+                let temp_text = format!("{}{}", weather.temp, weather.temp_unit);
                 info_grid.update_value("weather", &temp_text);
-                info_grid.update_path("weather", &format!("/home/vncnz/.config/eww/images/weather/{icon}"));
+                info_grid.update_path("weather", &format!("/home/vncnz/.config/eww/images/weather/{}", weather.icon_name));
             },
             SysUpdate::Error(_error) => {}
         }
