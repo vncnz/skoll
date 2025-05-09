@@ -1,4 +1,5 @@
-use gtk::prelude::*;
+use gdk_pixbuf::Pixbuf;
+use gtk::{prelude::*, IconSize};
 use gtk::{glib, Align, Grid, Image, Label, Orientation};
 
 use std::collections::HashMap;
@@ -7,6 +8,8 @@ pub struct InfoGrid {
     container: Grid,
     rows: HashMap<String, (Image, Label, Label, Label)>,
 }
+
+static ICONSIZE: i32 = 30;
 
 impl InfoGrid {
     pub fn new(info_keys: &[(String, String, String, String)]) -> Self {
@@ -19,11 +22,22 @@ impl InfoGrid {
         let mut rows = HashMap::new();
 
         for (i, (id, label_text, icon_text, icon_path)) in info_keys.iter().enumerate() {
-            let icon = if icon_path.is_empty() { Image::new() } else { Image::from_file(icon_path) };
-            icon.set_pixel_size(16);
+            let icon: Image;
+            if !icon_path.is_empty() {
+                icon = Image::from_file(icon_path);
+                let pixbuf = Pixbuf::from_file_at_size(icon_path, ICONSIZE, ICONSIZE);
+                if let Ok(pixbuf_) = pixbuf {
+                    icon.set_from_pixbuf(Some(&pixbuf_));
+                }
+            } else {
+                icon = Image::new();
+            }
+            icon.set_pixel_size(ICONSIZE);
+            
 
             let icon_label = Label::new(Some(icon_text));
             icon_label.set_halign(Align::Start);
+            icon_label.set_markup(&format!("<span style=\"font-size:{}px\">{}</span>", ICONSIZE, icon_text));
 
             let label = Label::new(Some(label_text));
             label.set_halign(Align::Start);
@@ -59,7 +73,9 @@ impl InfoGrid {
 
     pub fn update_path(&self, id: &str, new_icon_path: &str) {
         if let Some((icon, _, _, _)) = self.rows.get(id) {
-            icon.set_from_file(Some(new_icon_path));
+            // icon.set_from_file(Some(new_icon_path));
+            let pixbuf = Pixbuf::from_file_at_size(new_icon_path, ICONSIZE, ICONSIZE).unwrap();
+            icon.set_from_pixbuf(Some(&pixbuf));
         }
     }
 
@@ -69,4 +85,11 @@ impl InfoGrid {
         }
         &self
     }
+
+    /* pub fn update_icon_label(&self, id: &str, icon_text: &str) -> &Self {
+        if let Some((_, icon_label, _, _)) = self.rows.get(id) {
+            icon_label.set_markup(&format!("<span style=\"font-size:{}px\">{}</span>", ICONSIZE, icon_text));
+        }
+        &self
+    } */
 }

@@ -74,10 +74,20 @@ use bytesize::ByteSize;
 
 #[derive(Deserialize)]
 pub struct WeatherObj {
+    pub icon: String,
     pub icon_name: String,
-    pub temp: u32,
-    pub temp_real: u32,
-    pub temp_unit: String
+    pub temp: i8,
+    pub temp_real: i8,
+    pub temp_unit: String,
+    pub text: String,
+    pub day: String,
+    pub sunrise: String,
+    pub sunset: String,
+    pub sunrise_mins: u64,
+    pub sunset_mins: u64,
+    pub daylight: f64,
+    pub locality: String,
+    pub humidity: u8
 }
 
 fn app_startup(application: &gtk::Application) {
@@ -561,14 +571,11 @@ fn app_startup(application: &gtk::Application) {
     }
 
     fn get_weather () -> SysUpdate {
-        // use std::process::Command;
-
-        let mut cmd = Command::new("home/vncnz/.config/eww/scripts/meteo.sh");
-        cmd.arg("'Desenzano Del Garda'").arg("45.457692").arg("10.570684");
-        // let data = cmd.output().expect("failed to execute weather process");
-        let stdout = String::from_utf8(cmd.output().unwrap().stdout).unwrap();
-        let weather: WeatherObj = serde_json::from_str(&stdout).unwrap();
-        // let hello_2 = echo_hello.output().expect("failed to execute process");
+        let output = Command::new("/home/vncnz/.config/eww/scripts/meteo.sh").arg("'Desenzano Del Garda'").arg("45.457692").arg("10.570684").output();
+        let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
+        println!("\n{:?}", stdout);
+        let weather: WeatherObj;
+        weather = serde_json::from_str(&stdout).unwrap();
         SysUpdate::Weather(weather.icon_name, format!("{}{}", weather.temp, weather.temp_unit))
     }
     
@@ -658,10 +665,9 @@ fn app_startup(application: &gtk::Application) {
         glib::Continue(true)
     });
 
-    // In un altro thread: aggiornamento periodico
-    // get_weather();
     std::thread::spawn(move || {
         sender.send(get_disk_info()).expect("Send failed");
+        sender.send(get_weather()).expect("Send failed");
         // sender.send(get_weather()).expect("Send failed");
         loop {
             sender.send(get_load_avg()).expect("Send failed");
