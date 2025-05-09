@@ -91,6 +91,13 @@ pub struct VolumeObj {
     pub clazz: String
 }
 
+#[derive(Deserialize)]
+pub struct BrightnessObj {
+    pub icon: String,
+    pub percentage: i8,
+    pub clazz: String
+}
+
 fn app_startup(application: &gtk::Application) {
 
     
@@ -380,6 +387,7 @@ fn app_startup(application: &gtk::Application) {
         ("weather".into(), "Weather".into(), "".into(), "".into()),
         // ("cpu".into(), "CPU".into(), "IC".into(), "/path/to/icons/cpu.png".into()),
         ("volume".into(), "Volume".into(), "󱄡".into(), "".into()),
+        ("brightness".into(), "Brightness".into(), "󱧤".into(), "".into()),
     ];
     let info_grid = InfoGrid::new(&info_items);
     second_row.add(info_grid.widget());
@@ -470,6 +478,7 @@ fn app_startup(application: &gtk::Application) {
         Disk(String, String, u64, u64),
         Weather(WeatherObj),
         Volume(VolumeObj),
+        Brightness(BrightnessObj),
         Error(String)
     }
 
@@ -524,12 +533,21 @@ fn app_startup(application: &gtk::Application) {
     fn get_volume () -> SysUpdate {
         let output = Command::new("/home/vncnz/.config/eww/scripts/volume.sh").arg("json").output();
         let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
-        // println!("\n{:?}", stdout);
+        println!("\n{:?}", stdout);
         if let Ok(volume) = serde_json::from_str(&stdout) {
             SysUpdate::Volume(volume)
         } else {
             SysUpdate::Error("Error with serde and volume data".to_string())}
-        
+    }
+
+    fn get_brightness () -> SysUpdate {
+        let output = Command::new("/home/vncnz/.config/eww/scripts/brightness.sh").arg("json").output();
+        let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
+        println!("\n{:?}", stdout);
+        if let Ok(volume) = serde_json::from_str(&stdout) {
+            SysUpdate::Brightness(volume)
+        } else {
+            SysUpdate::Error("Error with serde and brightness data".to_string())}
     }
     
 
@@ -619,6 +637,13 @@ fn app_startup(application: &gtk::Application) {
                 info_grid.update_icon("volume", &*volume.icon);
                 info_grid.update_color("volume", &volume_color);
             },
+            SysUpdate::Brightness(brightness) => {
+                let text = format!("{}%", brightness.percentage);
+                // let brightness_color = get_color_gradient(30.0, 60.0, brightness.percentage as f64);
+                info_grid.update_value("brightness", &text);
+                info_grid.update_icon("brightness", &*brightness.icon);
+                // info_grid.update_color("brightness", &brightness_color);
+            },
             SysUpdate::Error(error) => {
                 println!("ERROR: {}", error);
             }
@@ -632,10 +657,13 @@ fn app_startup(application: &gtk::Application) {
         sender.send(get_disk_info()).expect("Send failed");
         sender.send(get_weather()).expect("Send failed");
         // sender.send(get_weather()).expect("Send failed");
+        let mut counter = 0;
         loop {
-            sender.send(get_load_avg()).expect("Send failed");
-            sender.send(get_ram_info()).expect("Send failed");
+            if counter % 2 == 0 { sender.send(get_load_avg()).expect("Send failed") };
+            if counter % 2 == 0 { sender.send(get_ram_info()).expect("Send failed") };
             sender.send(get_volume()).expect("Send failed");
+            sender.send(get_brightness()).expect("Send failed");
+            counter += 1;
             std::thread::sleep(std::time::Duration::from_secs(2));
         }
     });
