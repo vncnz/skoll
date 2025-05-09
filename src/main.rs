@@ -84,6 +84,13 @@ pub struct WeatherObj {
     pub humidity: u8
 }
 
+#[derive(Deserialize)]
+pub struct VolumeObj {
+    pub icon: String,
+    pub value: i8,
+    pub clazz: String
+}
+
 fn app_startup(application: &gtk::Application) {
 
     
@@ -117,16 +124,6 @@ fn app_startup(application: &gtk::Application) {
         gtk_layer_shell::auto_exclusive_zone_enable(&window);
     } */
 
-    /* gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Left, 0); // config.margin_left);
-    gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Right, 0); // config.margin_right);
-    gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Top, 0); // config.margin_top);
-    gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Bottom, 0); // config.margin_bottom);
-
-    gtk_layer_shell::set_anchor(&window, gtk_layer_shell::Edge::Left, config.anchor_left);
-    gtk_layer_shell::set_anchor(&window, gtk_layer_shell::Edge::Right, config.anchor_right);
-    gtk_layer_shell::set_anchor(&window, gtk_layer_shell::Edge::Top, config.anchor_top);
-    gtk_layer_shell::set_anchor(&window, gtk_layer_shell::Edge::Bottom, config.anchor_bottom); */
-
     window.set_decorated(false);
     window.set_app_paintable(true);
 
@@ -144,12 +141,6 @@ fn app_startup(application: &gtk::Application) {
     let extra_info_box = BoxBuilder::new()
         .name("extra_info_box")
         .orientation(gtk::Orientation::Horizontal)
-        // .width_request(config.width)
-        // .height_request(config.height)
-        //.margin_top(config.margin_top)
-        //.margin_end(config.margin_right)
-        //.margin_bottom(config.margin_bottom)
-        //.margin_start(config.margin_left)
         .vexpand(false)
         .hexpand(true)
         .halign(gtk::Align::Center)
@@ -159,14 +150,7 @@ fn app_startup(application: &gtk::Application) {
     let extra_info_rows = BoxBuilder::new()
         .name("extra_info_rows")
         .orientation(gtk::Orientation::Vertical)
-        // .width_request(config.width)
-        // .height_request(config.height)
-        //.margin_top(config.margin_top)
-        //.margin_end(config.margin_right)
-        //.margin_bottom(config.margin_bottom)
-        //.margin_start(config.margin_left)
-        .vexpand(false)
-        .hexpand(false)
+        .expand(false)
         .halign(gtk::Align::Center)
         .valign(gtk::Align::Fill)
         .build();
@@ -174,15 +158,7 @@ fn app_startup(application: &gtk::Application) {
     let second_row = BoxBuilder::new()
         .name("second_row")
         .orientation(gtk::Orientation::Horizontal)
-        // .width_request(config.width)
-        // .height_request(config.height)
-        // .halign(gtk::Align::Center)
-        // .margin_top(config.margin_top)
-        // .margin_end(config.margin_right)
-        // .margin_bottom(config.margin_bottom)
-        // .margin_start(config.margin_left)
-        .hexpand(true)
-        .vexpand(true)
+        .expand(true)
         .halign(gtk::Align::Fill)
         .valign(gtk::Align::Fill)
         // .hexpand(false)
@@ -192,9 +168,6 @@ fn app_startup(application: &gtk::Application) {
     let search_container = BoxBuilder::new()
         .name("search_container")
         .orientation(gtk::Orientation::Vertical)
-        // .width_request(config.width)
-        // .height_request(config.height)
-        // .halign(gtk::Align::Center)
         .margin_top(config.margin_top)
         .margin_end(config.margin_right)
         .margin_bottom(config.margin_bottom)
@@ -229,41 +202,12 @@ fn app_startup(application: &gtk::Application) {
     let (windows, workspaces_map) = get_niri_windows();
     let mut entry_hash_map = load_entries(&config, &history.borrow());
     let entry_windows_hash_map = load_entries_running(&config, windows, workspaces_map);
-    // let entry_hash_map2 = entry_windows_hash_map.clone();
 
     entry_hash_map.extend(entry_windows_hash_map);
 
     let entries = Rc::new(RefCell::new(entry_hash_map));
 
-    /* for win in windows {
-        let hbox = BoxBuilder::new()
-            .orientation(Orientation::Horizontal)
-            .build();
-        hbox.pack_start(&image, false, false, 0);
-        hbox.pack_end(&label, true, true, 0);
-
-        let row = ListBoxRow::new();
-        row.add(&hbox);
-        row.style_context().add_class(APP_ROW_CLASS);
-
-        listbox.add(win);
-    } */
-
     for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
-        /* let appentry = get_from_map(&entry_hash_map2, &row.clone());
-        match appentry {
-            Some(val) => {
-                if Some(&val.custom_cmd).is_some() {
-                    let header_row = ListBoxRow::new();
-                    let header_label = Label::new(Some("On display"));
-                    header_label.set_markup(&format!("<b>{}</b>", "On display"));
-                    header_row.add(&header_label);
-                    listbox.add(&header_row);
-                }
-            }
-            None => (),
-        } */
-
         listbox.add(row);
     }
 
@@ -435,7 +379,7 @@ fn app_startup(application: &gtk::Application) {
         ("disk".into(), "Main disk".into(), "󰋊".into(), "".into()),
         ("weather".into(), "Weather".into(), "".into(), "".into()),
         // ("cpu".into(), "CPU".into(), "IC".into(), "/path/to/icons/cpu.png".into()),
-        ("vol".into(), "Vol".into(), "IC".into(), "/path/to/icons/volume.png".into()),
+        ("volume".into(), "Volume".into(), "󱄡".into(), "".into()),
     ];
     let info_grid = InfoGrid::new(&info_items);
     second_row.add(info_grid.widget());
@@ -525,6 +469,7 @@ fn app_startup(application: &gtk::Application) {
         RAM(u64, u64, u64, u64),
         Disk(String, String, u64, u64),
         Weather(WeatherObj),
+        Volume(VolumeObj),
         Error(String)
     }
 
@@ -568,9 +513,23 @@ fn app_startup(application: &gtk::Application) {
         let output = Command::new("/home/vncnz/.config/eww/scripts/meteo.sh").arg("'Desenzano Del Garda'").arg("45.457692").arg("10.570684").output();
         let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
         println!("\n{:?}", stdout);
-        let weather: WeatherObj;
-        weather = serde_json::from_str(&stdout).unwrap();
-        SysUpdate::Weather(weather)
+        // let weather: WeatherObj;
+        if let Ok(weather) = serde_json::from_str(&stdout) {
+            SysUpdate::Weather(weather)
+        } else {
+            SysUpdate::Error("Error with serde and weather data".to_string())}
+        
+    }
+
+    fn get_volume () -> SysUpdate {
+        let output = Command::new("/home/vncnz/.config/eww/scripts/volume.sh").arg("json").output();
+        let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
+        // println!("\n{:?}", stdout);
+        if let Ok(volume) = serde_json::from_str(&stdout) {
+            SysUpdate::Volume(volume)
+        } else {
+            SysUpdate::Error("Error with serde and volume data".to_string())}
+        
     }
     
 
@@ -653,7 +612,16 @@ fn app_startup(application: &gtk::Application) {
                 info_grid.update_value("weather", &temp_text);
                 info_grid.update_path("weather", &format!("/home/vncnz/.config/eww/images/weather/{}", weather.icon_name));
             },
-            SysUpdate::Error(_error) => {}
+            SysUpdate::Volume(volume) => {
+                let text = if volume.value == 0 { "Muted".into() } else { format!("{}%", volume.value) };
+                let volume_color = get_color_gradient(30.0, 60.0, volume.value as f64);
+                info_grid.update_value("volume", &text);
+                info_grid.update_icon("volume", &*volume.icon);
+                info_grid.update_color("volume", &volume_color);
+            },
+            SysUpdate::Error(error) => {
+                println!("ERROR: {}", error);
+            }
         }
         // sysdata.loadavg = Some(info);
         // println!("\n\n\n\n{}\n\n\n\n", sysdata.loadavg.unwrap_or_default());
@@ -667,6 +635,7 @@ fn app_startup(application: &gtk::Application) {
         loop {
             sender.send(get_load_avg()).expect("Send failed");
             sender.send(get_ram_info()).expect("Send failed");
+            sender.send(get_volume()).expect("Send failed");
             std::thread::sleep(std::time::Duration::from_secs(2));
         }
     });

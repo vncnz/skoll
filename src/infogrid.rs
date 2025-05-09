@@ -86,10 +86,10 @@ impl InfoGrid {
         &self
     }
 
-    /* pub fn update_icon_label(&self, id: &str, icon_text: &str) -> &Self {
+    pub fn update_icon(&self, id: &str, icon_text: &str) -> &Self {
         if let Some((_, icon_label, _, _)) = self.rows.get(id) {
-            icon_label.set_markup(&format!("<span style=\"font-size:{}px\">{}</span>", ICONSIZE, icon_text));
+            icon_label.set_text(icon_text);
         }
         &self
-    } */
+    }
 }
