@@ -145,7 +145,7 @@ fn app_startup(application: &gtk::Application) {
         .hexpand(true)
         .build();
 
-    let extra_info_box = BoxBuilder::new()
+    /* let extra_info_box = BoxBuilder::new()
         .name("extra_info_box")
         .orientation(gtk::Orientation::Horizontal)
         .vexpand(false)
@@ -153,6 +153,7 @@ fn app_startup(application: &gtk::Application) {
         .halign(gtk::Align::Center)
         .valign(gtk::Align::Fill)
         .build();
+    */
 
     let extra_info_rows = BoxBuilder::new()
         .name("extra_info_rows")
@@ -185,8 +186,26 @@ fn app_startup(application: &gtk::Application) {
         .valign(gtk::Align::Fill)
         .build();
 
+        let info_items = vec![
+            ("loadavg".into(), "Load avg".into(), "󰬢".into(), "".into()),
+            ("ram".into(), "RAM".into(), "󰍛".into(), "".into()),
+            ("swap".into(), "SWAP".into(), "󰍛".into(), "".into()),
+            ("disk".into(), "Main disk".into(), "󰋊".into(), "".into()),
+            ("weather".into(), "Weather".into(), "".into(), "".into()),
+            // ("cpu".into(), "CPU".into(), "IC".into(), "/path/to/icons/cpu.png".into()),
+            ("volume".into(), "Volume".into(), "󱄡".into(), "".into()),
+            ("brightness".into(), "Brightness".into(), "󱧤".into(), "".into()),
+        ];
+        let info_grid = InfoBar::new(&info_items);
+        container.add(info_grid.widget());
+    
+        // Altrove, ad esempio in un async task:
+        // info_grid.update_value("ram", "2.9 GiB");
+        // info_grid.update_icon("vol", "/path/to/icons/volume-muted.png");
+        // info_grid.update_color("cpu", "orange");
+
     second_row.add(&search_container);    
-    container.add(&extra_info_box); 
+    // container.add(&extra_info_box);
     container.add(&extra_info_rows);
     container.add(&second_row);
 
@@ -374,36 +393,6 @@ fn app_startup(application: &gtk::Application) {
         tips_box.add(&label_tip_1);
     }
     second_row.add(&tips_box);
-
-
-
-
-
-    let info_items = vec![
-        ("loadavg".into(), "Load avg".into(), "󰬢".into(), "".into()),
-        ("ram".into(), "RAM".into(), "󰍛".into(), "".into()),
-        ("swap".into(), "SWAP".into(), "󰍛".into(), "".into()),
-        ("disk".into(), "Main disk".into(), "󰋊".into(), "".into()),
-        ("weather".into(), "Weather".into(), "".into(), "".into()),
-        // ("cpu".into(), "CPU".into(), "IC".into(), "/path/to/icons/cpu.png".into()),
-        ("volume".into(), "Volume".into(), "󱄡".into(), "".into()),
-        ("brightness".into(), "Brightness".into(), "󱧤".into(), "".into()),
-    ];
-    let info_grid = InfoGrid::new(&info_items);
-    second_row.add(info_grid.widget());
-
-    // Altrove, ad esempio in un async task:
-    // info_grid.update_value("ram", "2.9 GiB");
-    // info_grid.update_icon("vol", "/path/to/icons/volume-muted.png");
-    // info_grid.update_color("cpu", "orange");
-
-
-
-
-
-
-
-
 
     // let mut avg_infobox = InfoBox::new(&"󰬢", [("1m", 0.0, None), ("5m", 0.0, None), ("15m", 0.0, None)].to_vec());
     // let mut ram_infobox = InfoBox::new(&"󰍛", vec![("RAM?", 0.0, None), ("SWAP?", 0.0, None)]);
