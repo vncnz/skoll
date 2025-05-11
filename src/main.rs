@@ -533,7 +533,7 @@ fn app_startup(application: &gtk::Application) {
     fn get_volume () -> SysUpdate {
         let output = Command::new("/home/vncnz/.config/eww/scripts/volume.sh").arg("json").output();
         let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
-        println!("\n{:?}", stdout);
+        // println!("\n{:?}", stdout);
         if let Ok(volume) = serde_json::from_str(&stdout) {
             SysUpdate::Volume(volume)
         } else {
@@ -543,7 +543,7 @@ fn app_startup(application: &gtk::Application) {
     fn get_brightness () -> SysUpdate {
         let output = Command::new("/home/vncnz/.config/eww/scripts/brightness.sh").arg("json").output();
         let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
-        println!("\n{:?}", stdout);
+        // println!("\n{:?}", stdout);
         if let Ok(volume) = serde_json::from_str(&stdout) {
             SysUpdate::Brightness(volume)
         } else {
