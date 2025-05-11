@@ -14,7 +14,7 @@ pub trait InfoView {
     fn update_icon(&self, id: &str, icon_text: &str) -> &Self;
 }
 
-static ICONSIZE: i32 = 30;
+static ICONSIZE: i32 = 24;
 
 pub struct InfoGrid {
     container: gtk::Widget,
@@ -132,11 +132,12 @@ impl InfoView for InfoBar {
                 let pixbuf = Pixbuf::from_file_at_size(icon_path, ICONSIZE, ICONSIZE);
                 if let Ok(pixbuf_) = pixbuf {
                     icon.set_from_pixbuf(Some(&pixbuf_));
+                    icon.set_pixel_size(ICONSIZE);
                 }
             } else {
                 icon = Image::new();
+                icon.set_pixel_size(0);
             }
-            icon.set_pixel_size(ICONSIZE);
             
             let innerbox = BoxBuilder::new()
                 .name("inner_box")
@@ -146,6 +147,7 @@ impl InfoView for InfoBar {
                 .halign(gtk::Align::Center)
                 .valign(gtk::Align::Center)
                 .build();
+            innerbox.style_context().add_class("island");
 
             let icon_label = Label::new(Some(icon_text));
             icon_label.set_halign(Align::Start);
@@ -157,6 +159,7 @@ impl InfoView for InfoBar {
             let value = Label::new(Some("…"));
             value.set_halign(Align::Start);
             value.set_xalign(1.0);
+            value.style_context().add_class("value");
 
             innerbox.add(&icon);
             innerbox.add(&icon_label);
@@ -189,6 +192,7 @@ impl InfoView for InfoBar {
             // icon.set_from_file(Some(new_icon_path));
             let pixbuf = Pixbuf::from_file_at_size(new_icon_path, ICONSIZE, ICONSIZE).unwrap();
             icon.set_from_pixbuf(Some(&pixbuf));
+            icon.set_pixel_size(ICONSIZE);
         }
         &self
     }

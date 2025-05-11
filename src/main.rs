@@ -145,24 +145,6 @@ fn app_startup(application: &gtk::Application) {
         .hexpand(true)
         .build();
 
-    /* let extra_info_box = BoxBuilder::new()
-        .name("extra_info_box")
-        .orientation(gtk::Orientation::Horizontal)
-        .vexpand(false)
-        .hexpand(true)
-        .halign(gtk::Align::Center)
-        .valign(gtk::Align::Fill)
-        .build();
-    */
-
-    let extra_info_rows = BoxBuilder::new()
-        .name("extra_info_rows")
-        .orientation(gtk::Orientation::Vertical)
-        .expand(false)
-        .halign(gtk::Align::Center)
-        .valign(gtk::Align::Fill)
-        .build();
-
     let second_row = BoxBuilder::new()
         .name("second_row")
         .orientation(gtk::Orientation::Horizontal)
@@ -189,7 +171,7 @@ fn app_startup(application: &gtk::Application) {
         let info_items = vec![
             ("loadavg".into(), "Load avg".into(), "󰬢".into(), "".into()),
             ("ram".into(), "RAM".into(), "󰍛".into(), "".into()),
-            ("swap".into(), "SWAP".into(), "󰍛".into(), "".into()),
+            // ("swap".into(), "SWAP".into(), "󰍛".into(), "".into()),
             ("disk".into(), "Main disk".into(), "󰋊".into(), "".into()),
             ("weather".into(), "Weather".into(), "".into(), "".into()),
             // ("cpu".into(), "CPU".into(), "IC".into(), "/path/to/icons/cpu.png".into()),
@@ -206,7 +188,6 @@ fn app_startup(application: &gtk::Application) {
 
     second_row.add(&search_container);    
     // container.add(&extra_info_box);
-    container.add(&extra_info_rows);
     container.add(&second_row);
 
     // vbox.set_css_classes(&["debug"]);
@@ -388,78 +369,13 @@ fn app_startup(application: &gtk::Application) {
             .margin(10)
             .halign(gtk::Align::Start)
             .build();
-        // let label_tip_1 = Label::new(Some("Use tray-tui for tray usage!"));
 
         tips_box.add(&label_tip_1);
     }
     second_row.add(&tips_box);
-
-    // let mut avg_infobox = InfoBox::new(&"󰬢", [("1m", 0.0, None), ("5m", 0.0, None), ("15m", 0.0, None)].to_vec());
-    // let mut ram_infobox = InfoBox::new(&"󰍛", vec![("RAM?", 0.0, None), ("SWAP?", 0.0, None)]);
-    // let mut avg_inforow = InfoRow::new("󰬢", "Load avg", "[0.1 0.2 0.3]");
-
-
-    /* let ram_box = BoxBuilder::new()
-        .name("ram_box")
-        .orientation(gtk::Orientation::Vertical)
-        .expand(false)
-        .build();
-
-    let avg_box = BoxBuilder::new()
-        .name("avg_box")
-        .orientation(gtk::Orientation::Vertical)
-        .expand(false)
-        .build(); */
-
-    /*
-        let label_sys_avg1m = LabelBuilder::new().margin(0).label("1m?").build();
-        let label_sys_avg5m = LabelBuilder::new().margin(0).label("5m?").build();
-        let label_sys_avg15m = LabelBuilder::new().margin(0).label("15m?").build();
-        avg_box.add(&label_sys_avg1m);
-        avg_box.add(&label_sys_avg5m);
-        avg_box.add(&label_sys_avg15m);
-    */
     
-
-    // let label_sys_avg = LabelBuilder::new().margin(10).label("AVG?").build();
-    // let label_sys_ram = LabelBuilder::new().margin(10).label("RAM?").build();
-    // let label_sys_swap = LabelBuilder::new().margin(10).label("SWAP?").build();
-    // let label_sys_disk = LabelBuilder::new().margin(10).label("DISK?").build();
-
     // let memory_adjustment = Adjustment::new(0.0, 0.0, 100.0, 1.0, 10.0, 0.0);
     // let range_sys_ram = ScaleBuilder::new().orientation(gtk::Orientation::Horizontal).adjustment(&memory_adjustment).draw_value(false).sensitive(false).build();
-    // let swap_adjustment = Adjustment::new(0.0, 0.0, 100.0, 1.0, 10.0, 0.0);
-    // let range_sys_swap = ScaleBuilder::new().orientation(gtk::Orientation::Horizontal).adjustment(&swap_adjustment).draw_value(false).sensitive(false).build();
-    // let disk_adjustment = Adjustment::new(0.0, 0.0, 100.0, 1.0, 10.0, 0.0);
-    // let range_sys_disk = ScaleBuilder::new().orientation(gtk::Orientation::Horizontal).adjustment(&disk_adjustment).draw_value(false).sensitive(false).build();
-
-    // let ram_box_clone = ram_box.clone();
-    // let avg_box_clone = avg_box.clone();
-
-    // let label_sys_avg_clone = label_sys_avg.clone();
-    // let label_sys_ram_clone = label_sys_ram.clone();
-    // let label_sys_swap_clone = label_sys_swap.clone();
-    // let range_sys_ram_clone = range_sys_ram.clone();
-    // let range_sys_swap_clone = range_sys_swap.clone();
-    
-    // let range_sys_disk_clone = range_sys_disk.clone();
-    // let label_sys_disk_clone = label_sys_disk.clone();
-
-    // extra_info_box.add(&avg_infobox.container);
-    // extra_info_box.add(&ram_infobox.container);
-
-    // extra_info_rows.add(&avg_inforow.container);
-    // extra_info_box.add(&avg_box);
-    // extra_info_box.add(&label_sys_avg);
-    // extra_info_box.add(&label_sys_ram_range);
-    // extra_info_box.add(&label_sys_swap_range);
-    // ram_box.add(&range_sys_ram);
-    // ram_box.add(&range_sys_swap);
-    // extra_info_box.add(&ram_box);
-    // extra_info_box.add(&label_sys_ram);
-    // extra_info_box.add(&label_sys_swap);
-    // extra_info_box.add(&range_sys_disk);
-    // extra_info_box.add(&label_sys_disk);
 
     enum SysUpdate {
         LoadAvg(f64, f64, f64),
@@ -576,19 +492,11 @@ fn app_startup(application: &gtk::Application) {
                 let swap_ratio = us as f64 / ts as f64;
                 let swap_color = get_color_gradient(40.0, 90.0, swap_ratio * 100.0);
 
-                /* label_sys_ram_clone.set_markup(&format!("<span foreground=\"{}\"> {:.0}% of {}</span>", memory_color, memory_ratio * 100.0, tmh));
-
-                range_sys_ram_clone.set_value(memory_ratio * 100.0);
+                /*  range_sys_ram_clone.set_value(memory_ratio * 100.0);
                 apply_scale_color(&range_sys_ram_clone, &memory_color);
 
-                
-                // label_sys_swap_clone.set_markup(&format!("<span foreground=\"{}\">󰍛 {:.0}% of {}</span>", swap_color, swap_ratio * 100.0, tsh));
-                label_sys_swap_clone.set_text(&format!("󰍛 {:.0}% of {}", swap_ratio * 100.0, tsh));
-
                 range_sys_swap_clone.set_value(swap_ratio * 100.0);
-                apply_scale_color(&range_sys_swap_clone, &swap_color);
-
-                ram_box_clone.set_tooltip_text(Some(&format!(" {:.0}% of {}\n󰍛 {:.0}% of {}", memory_ratio * 100.0, tmh, swap_ratio * 100.0, tsh))); */
+                apply_scale_color(&range_sys_swap_clone, &swap_color); */
 
                 /* ram_infobox.update_data([
                     (&*format!("{:.0}% of {}", memory_ratio * 100.0, tmh), memory_ratio * 100.0, Some(memory_color.clone())),
@@ -598,10 +506,8 @@ fn app_startup(application: &gtk::Application) {
                 info_grid.update_value("ram", &*format!("M: {:.0}% of {}\nS: {:.0}% of {}", memory_ratio * 100.0, tmh, swap_ratio * 100.0, tsh));
                 info_grid.update_color("ram", &memory_color);
 
-                info_grid.update_value("swap", &*format!("{:.0}% of {}", swap_ratio * 100.0, tsh));
-                info_grid.update_color("swap", &swap_color);
-
-                // ram_infobox.set_color(&memory_color);
+                // info_grid.update_value("swap", &*format!("{:.0}% of {}", swap_ratio * 100.0, tsh));
+                // info_grid.update_color("swap", &swap_color);
             },
             SysUpdate::Disk(_name, _mount_point, avb, total) => {
                 let totalh = ByteSize::b(total).display().iec().to_string();
