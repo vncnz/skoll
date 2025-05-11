@@ -280,6 +280,7 @@ pub fn load_entries_running(
             .lines(config.lines)
             .build();
         label.style_context().add_class(APP_LABEL_CLASS);
+        label.style_context().add_class("running");
 
         let image = ImageBuilder::new().pixel_size(config.icon_size).build();
         if let Some(icon) = app.icon() {
