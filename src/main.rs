@@ -595,7 +595,7 @@ fn app_startup(application: &gtk::Application) {
                     (&*format!("{:.0}% of {}", swap_ratio * 100.0, tsh), 50.0, Some(swap_color.clone()))
                 ].to_vec()); */
 
-                info_grid.update_value("ram", &*format!("{:.0}% of {}", memory_ratio * 100.0, tmh));
+                info_grid.update_value("ram", &*format!("M: {:.0}% of {}\nS: {:.0}% of {}", memory_ratio * 100.0, tmh, swap_ratio * 100.0, tsh));
                 info_grid.update_color("ram", &memory_color);
 
                 info_grid.update_value("swap", &*format!("{:.0}% of {}", swap_ratio * 100.0, tsh));

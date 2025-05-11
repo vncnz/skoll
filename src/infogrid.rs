@@ -108,14 +108,14 @@ impl InfoView for InfoGrid {
 
 pub struct InfoBar {
     container: gtk::Widget,
-    rows: HashMap<String, (Image, Label, Label, Label)>,
+    rows: HashMap<String, (Image, Label, Label)>,
 }
 
 impl InfoView for InfoBar {
     fn new(info_keys: &[(String, String, String, String)]) -> Self {
         // info_keys: Vec<(id, label, icon_path)>
         let inforow = BoxBuilder::new()
-            .name("extra_info_box")
+            .name("info_bar")
             .orientation(gtk::Orientation::Horizontal)
             .vexpand(false)
             .hexpand(true)
@@ -125,7 +125,7 @@ impl InfoView for InfoBar {
 
         let mut rows = HashMap::new();
 
-        for (i, (id, label_text, icon_text, icon_path)) in info_keys.iter().enumerate() {
+        for (i, (id, _label_text, icon_text, icon_path)) in info_keys.iter().enumerate() {
             let icon: Image;
             if !icon_path.is_empty() {
                 icon = Image::from_file(icon_path);
@@ -151,8 +151,8 @@ impl InfoView for InfoBar {
             icon_label.set_halign(Align::Start);
             icon_label.style_context().add_class("grid-icon");
 
-            let label = Label::new(Some(label_text));
-            label.set_halign(Align::Start);
+            // let label = Label::new(Some(label_text));
+            // label.set_halign(Align::Start);
 
             let value = Label::new(Some("…"));
             value.set_halign(Align::Start);
@@ -160,12 +160,11 @@ impl InfoView for InfoBar {
 
             innerbox.add(&icon);
             innerbox.add(&icon_label);
-            innerbox.add(&label);
             innerbox.add(&value);
 
             inforow.add(&innerbox);
 
-            rows.insert(id.clone(), (icon, icon_label, label, value));
+            rows.insert(id.clone(), (icon, icon_label, value));
         }
 
         Self {
@@ -179,14 +178,14 @@ impl InfoView for InfoBar {
     }
 
     fn update_value(&self, id: &str, new_value: &str) -> &Self {
-        if let Some((_, _, _, value_label)) = self.rows.get(id) {
+        if let Some((_, _, value_label)) = self.rows.get(id) {
             value_label.set_text(new_value);
         }
         &self
     }
 
     fn update_path(&self, id: &str, new_icon_path: &str) -> &Self {
-        if let Some((icon, _, _, _)) = self.rows.get(id) {
+        if let Some((icon, _, _)) = self.rows.get(id) {
             // icon.set_from_file(Some(new_icon_path));
             let pixbuf = Pixbuf::from_file_at_size(new_icon_path, ICONSIZE, ICONSIZE).unwrap();
             icon.set_from_pixbuf(Some(&pixbuf));
@@ -195,14 +194,14 @@ impl InfoView for InfoBar {
     }
 
     fn update_color(&self, id: &str, color_css: &str) -> &Self {
-        if let Some((_, _, _, value_label)) = self.rows.get(id) {
+        if let Some((_, _, value_label)) = self.rows.get(id) {
             value_label.set_markup(&format!(r#"<span foreground="{}">{}</span>"#, color_css, glib::markup_escape_text(&value_label.text())));
         }
         &self
     }
 
     fn update_icon(&self, id: &str, icon_text: &str) -> &Self {
-        if let Some((_, icon_label, _, _)) = self.rows.get(id) {
+        if let Some((_, icon_label, _)) = self.rows.get(id) {
             icon_label.set_text(icon_text);
         }
         &self
