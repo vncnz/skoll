@@ -177,6 +177,7 @@ fn app_startup(application: &gtk::Application) {
             // ("cpu".into(), "CPU".into(), "IC".into(), "/path/to/icons/cpu.png".into()),
             ("volume".into(), "Volume".into(), "󱄡".into(), "".into()),
             ("brightness".into(), "Brightness".into(), "󱧤".into(), "".into()),
+            ("temp".into(), "Temperature".into(), "".into(), "".into()),
         ];
         let info_grid = InfoBar::new(&info_items);
         container.add(info_grid.widget());
@@ -384,6 +385,7 @@ fn app_startup(application: &gtk::Application) {
         Weather(WeatherObj),
         Volume(VolumeObj),
         Brightness(BrightnessObj),
+        Temperature(String, f64),
         Error(String)
     }
 
@@ -442,7 +444,8 @@ fn app_startup(application: &gtk::Application) {
         if let Ok(volume) = serde_json::from_str(&stdout) {
             SysUpdate::Volume(volume)
         } else {
-            SysUpdate::Error("Error with serde and volume data".to_string())}
+            SysUpdate::Error("Error with serde and volume data".to_string())
+        }
     }
 
     fn get_brightness () -> SysUpdate {
@@ -452,17 +455,57 @@ fn app_startup(application: &gtk::Application) {
         if let Ok(volume) = serde_json::from_str(&stdout) {
             SysUpdate::Brightness(volume)
         } else {
-            SysUpdate::Error("Error with serde and brightness data".to_string())}
+            SysUpdate::Error("Error with serde and brightness data".to_string())
+        }
     }
 
-    fn get_sys_temperatures () {
+    /* fn get_sys_temperatures () -> SysUpdate {
         let components = sysinfo::Components::new_with_refreshed_list();
         println!("=> components:");
         for component in &components {
             println!("{component:?}");
         }
+        SysUpdate::Temperature("Prova", 3f)
     }
-    get_sys_temperatures();
+    get_sys_temperatures(); */
+
+    /* fn get_network_status () {
+        let output = Command::new("/home/vncnz/.config/eww/scripts/network.sh").arg("json").output();
+        let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
+        // println!("\n{:?}", stdout);
+        if let Ok(network) = serde_json::from_str(&stdout) {
+            SysUpdate::Brightness(volume)
+        } else {
+            SysUpdate::Error("Error with serde and network data".to_string())
+        }
+        // echo '{"essid": "'"$essid"'", "signal": '"$signal"', "icon": "'"$icon"'", "wired": '"$wired"', "wifi": '"$wifi"', "class": "'"$class"'"}'
+    } */
+
+    /* fn spawn_volume_monitor(sender: glib::Sender<SysUpdate>) {
+        std::thread::spawn(move || {
+            let child = Command::new("pactl")
+                .arg("subscribe")
+                .stdout(std::process::Stdio::piped())
+                .spawn();
+
+            if let Ok(mut child) = child {
+                if let Some(stdout) = child.stdout.take() {
+                    let reader = BufReader::new(stdout);
+                    for line in reader.lines() {
+                        if let Ok(line) = line {
+                            if line.contains("sink") {
+                                let volume = get_current_volume(); // definisci tu
+                                let _ = sender.send(SysUpdate::Volume(volume));
+                            }
+                        }
+                    }
+                }
+            } else {
+                eprintln!("Errore nell'eseguire pactl subscribe");
+            }
+        });
+    } */
+
     
 
     let (sender, receiver) = glib::MainContext::channel::<SysUpdate>(glib::PRIORITY_DEFAULT);
@@ -546,6 +589,13 @@ fn app_startup(application: &gtk::Application) {
                 // let brightness_color = get_color_gradient(30.0, 60.0, brightness.percentage as f64);
                 info_grid.update_value("brightness", &text);
                 info_grid.update_icon("brightness", &*brightness.icon);
+                // info_grid.update_color("brightness", &brightness_color);
+            },
+            SysUpdate::Temperature(sensor, value) => {
+                let text = format!("{}*C", value);
+                // let brightness_color = get_color_gradient(30.0, 60.0, brightness.percentage as f64);
+                info_grid.update_value("temp", &text);
+                // info_grid.update_icon("temp", "");
                 // info_grid.update_color("brightness", &brightness_color);
             },
             SysUpdate::Error(error) => {
