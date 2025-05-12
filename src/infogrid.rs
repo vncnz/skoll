@@ -145,7 +145,7 @@ impl InfoView for InfoBar {
                 .vexpand(false)
                 .hexpand(false)
                 .halign(gtk::Align::Center)
-                .valign(gtk::Align::Center)
+                .valign(gtk::Align::Start)
                 .build();
             innerbox.style_context().add_class("island");
 
