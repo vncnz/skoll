@@ -188,7 +188,7 @@ pub fn get_color_gradient(min: f64, max: f64, value: f64) -> String {
 
     // Interpola l'hue da 120° (verde) a 0° (rosso)
     let hue = 120.0 * (1.0 - ratio); // 120 -> 0
-    let (r, g, b) = hsv_to_rgb(hue, 1.0, 1.0);
+    let (r, g, b) = hsv_to_rgb(hue, ratio, 1.0);
 
     format!("#{:02X}{:02X}{:02X}", r, g, b)
 }
