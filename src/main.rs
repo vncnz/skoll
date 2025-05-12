@@ -426,7 +426,7 @@ fn app_startup(application: &gtk::Application) {
     fn get_weather () -> SysUpdate {
         let output = Command::new("/home/vncnz/.config/eww/scripts/meteo.sh").arg("'Desenzano Del Garda'").arg("45.457692").arg("10.570684").output();
         let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
-        println!("\n{:?}", stdout);
+        // println!("\n{:?}", stdout);
         // let weather: WeatherObj;
         if let Ok(weather) = serde_json::from_str(&stdout) {
             SysUpdate::Weather(weather)
@@ -454,6 +454,15 @@ fn app_startup(application: &gtk::Application) {
         } else {
             SysUpdate::Error("Error with serde and brightness data".to_string())}
     }
+
+    fn get_sys_temperatures () {
+        let components = sysinfo::Components::new_with_refreshed_list();
+        println!("=> components:");
+        for component in &components {
+            println!("{component:?}");
+        }
+    }
+    get_sys_temperatures();
     
 
     let (sender, receiver) = glib::MainContext::channel::<SysUpdate>(glib::PRIORITY_DEFAULT);
