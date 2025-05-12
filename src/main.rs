@@ -54,8 +54,11 @@ use niri::*;
 mod infogrid;
 use infogrid::*;
 
-use std::process::Command;
+use std::process::{Command, Stdio};
 // use std::error::Error;
+
+use std::io::{BufReader, BufRead};
+
 use serde_json;
 
 use sysinfo::{Disks, System};
@@ -96,6 +99,17 @@ pub struct BrightnessObj {
     pub icon: String,
     pub percentage: i8,
     pub clazz: String
+}
+
+#[derive(Deserialize)]
+pub struct NetworkObj {
+    // '{"essid": "'"$essid"'", "signal": '"$signal"', "icon": "'"$icon"'", "wired": '"$wired"', "wifi": '"$wifi"', "class": "'"$class"'"}'
+    pub icon: String,
+    pub signal: i8,
+    pub class: String,
+    pub essid: String,
+    pub wired: i8,
+    pub wifi: i8
 }
 
 fn app_startup(application: &gtk::Application) {
@@ -178,6 +192,7 @@ fn app_startup(application: &gtk::Application) {
             ("volume".into(), "Volume".into(), "󱄡".into(), "".into()),
             ("brightness".into(), "Brightness".into(), "󱧤".into(), "".into()),
             ("temp".into(), "Temperature".into(), "".into(), "".into()),
+            ("network".into(), "Network".into(), "󰲊".into(), "".into()),
         ];
         let info_grid = InfoBar::new(&info_items);
         container.add(info_grid.widget());
@@ -386,6 +401,7 @@ fn app_startup(application: &gtk::Application) {
         Volume(VolumeObj),
         Brightness(BrightnessObj),
         Temperature(String, f64),
+        Network(NetworkObj),
         Error(String)
     }
 
@@ -459,6 +475,36 @@ fn app_startup(application: &gtk::Application) {
         }
     }
 
+    fn spawn_network_monitor (sender: glib::Sender<SysUpdate>) {
+        let mut child = Command::new("/home/vncnz/.config/eww/scripts/network.sh")
+            .arg(&"json")
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("Failed to spawn network monitor");
+    
+        let stdout = child.stdout.take().expect("Failed to open stdout");
+        let reader = BufReader::new(stdout);
+    
+        std::thread::spawn(move || {
+            for line in reader.lines() {
+                match line {
+                    Ok(data) => {
+                        println!("Evento di rete: {}", data);
+                        if let Ok(net) = serde_json::from_str(&data) {
+                            let _ = sender.send(SysUpdate::Network(net));
+                        } else {
+                            let _ = sender.send(SysUpdate::Error("Error with serde and network data".to_string()));
+                        }
+                    }
+                    Err(err) => {
+                        eprintln!("Errore lettura output network: {}", err);
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
     /* fn get_sys_temperatures () -> SysUpdate {
         let components = sysinfo::Components::new_with_refreshed_list();
         println!("=> components:");
@@ -468,18 +514,6 @@ fn app_startup(application: &gtk::Application) {
         SysUpdate::Temperature("Prova", 3f)
     }
     get_sys_temperatures(); */
-
-    /* fn get_network_status () {
-        let output = Command::new("/home/vncnz/.config/eww/scripts/network.sh").arg("json").output();
-        let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
-        // println!("\n{:?}", stdout);
-        if let Ok(network) = serde_json::from_str(&stdout) {
-            SysUpdate::Brightness(volume)
-        } else {
-            SysUpdate::Error("Error with serde and network data".to_string())
-        }
-        // echo '{"essid": "'"$essid"'", "signal": '"$signal"', "icon": "'"$icon"'", "wired": '"$wired"', "wifi": '"$wifi"', "class": "'"$class"'"}'
-    } */
 
     /* fn spawn_volume_monitor(sender: glib::Sender<SysUpdate>) {
         std::thread::spawn(move || {
@@ -542,7 +576,7 @@ fn app_startup(application: &gtk::Application) {
                 let memory_color = get_color_gradient(50.0, 90.0, memory_ratio * 100.0);
 
                 let swap_ratio = us as f64 / ts as f64;
-                let swap_color = get_color_gradient(40.0, 90.0, swap_ratio * 100.0);
+                // let swap_color = get_color_gradient(40.0, 90.0, swap_ratio * 100.0);
 
                 /*  range_sys_ram_clone.set_value(memory_ratio * 100.0);
                 apply_scale_color(&range_sys_ram_clone, &memory_color);
@@ -598,6 +632,14 @@ fn app_startup(application: &gtk::Application) {
                 // info_grid.update_icon("temp", "");
                 // info_grid.update_color("brightness", &brightness_color);
             },
+            SysUpdate::Network(net) => {
+                let text = format!("{}%", net.signal);
+                // let brightness_color = get_color_gradient(30.0, 60.0, brightness.percentage as f64);
+                info_grid.update_value("network", &text);
+                info_grid.update_icon("network", &net.icon);
+                // info_grid.update_icon("temp", "");
+                // info_grid.update_color("brightness", &brightness_color);
+            },
             SysUpdate::Error(error) => {
                 println!("ERROR: {}", error);
             }
@@ -606,6 +648,9 @@ fn app_startup(application: &gtk::Application) {
         // println!("\n\n\n\n{}\n\n\n\n", sysdata.loadavg.unwrap_or_default());
         glib::Continue(true)
     });
+
+
+    spawn_network_monitor(sender.clone());
 
     std::thread::spawn(move || {
         sender.send(get_disk_info()).expect("Send failed");
