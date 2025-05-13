@@ -14,7 +14,7 @@ pub trait InfoView {
     fn update_icon(&self, id: &str, icon_text: &str) -> &Self;
 }
 
-static ICONSIZE: i32 = 24;
+static ICONSIZE: i32 = 16;
 
 pub struct InfoGrid {
     container: gtk::Widget,
