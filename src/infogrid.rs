@@ -150,6 +150,7 @@ impl InfoView for InfoBar {
             innerbox.style_context().add_class("island");
 
             let icon_label = Label::new(Some(icon_text));
+            icon_label.set_valign(Align::Start);
             icon_label.set_halign(Align::Start);
             icon_label.style_context().add_class("grid-icon");
 
@@ -198,8 +199,9 @@ impl InfoView for InfoBar {
     }
 
     fn update_color(&self, id: &str, color_css: &str) -> &Self {
-        if let Some((_, _, value_label)) = self.rows.get(id) {
+        if let Some((_, icon_label, value_label)) = self.rows.get(id) {
             value_label.set_markup(&format!(r#"<span foreground="{}">{}</span>"#, color_css, glib::markup_escape_text(&value_label.text())));
+            icon_label.set_markup(&format!(r#"<span foreground="{}">{}</span>"#, color_css, glib::markup_escape_text(&icon_label.text())));
         }
         &self
     }

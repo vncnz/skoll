@@ -178,7 +178,7 @@ fn hsv_to_rgb(h: f64, s: f64, v: f64) -> (u8, u8, u8) {
     (r, g, b)
 }
 
-pub fn get_color_gradient(min: f64, max: f64, value: f64) -> String {
+pub fn get_color_gradient(min: f64, max: f64, value: f64, reversed: bool) -> String {
     let clamped = value.clamp(min, max);
     let ratio = if (max - min).abs() < f64::EPSILON {
         0.5
@@ -187,8 +187,9 @@ pub fn get_color_gradient(min: f64, max: f64, value: f64) -> String {
     };
 
     // Interpola l'hue da 120° (verde) a 0° (rosso)
-    let hue = 120.0 * (1.0 - ratio); // 120 -> 0
-    let (r, g, b) = hsv_to_rgb(hue, ratio, 1.0);
+    let position = if reversed { ratio } else { 1.0 - ratio };
+    let hue = 120.0 * position; // 120 -> 0
+    let (r, g, b) = hsv_to_rgb(hue, 1.0 - position, 1.0);
 
     format!("#{:02X}{:02X}{:02X}", r, g, b)
 }

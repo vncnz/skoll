@@ -191,7 +191,7 @@ fn app_startup(application: &gtk::Application) {
             // ("cpu".into(), "CPU".into(), "IC".into(), "/path/to/icons/cpu.png".into()),
             ("volume".into(), "Volume".into(), "󱄡".into(), "".into()),
             ("brightness".into(), "Brightness".into(), "󱧤".into(), "".into()),
-            ("temp".into(), "Temperature".into(), "".into(), "".into()),
+            ("temp".into(), "Temperature".into(), "󱤋".into(), "".into()),
             ("network".into(), "Network".into(), "󰲊".into(), "".into()),
         ];
         let info_grid = InfoBar::new(&info_items);
@@ -400,7 +400,7 @@ fn app_startup(application: &gtk::Application) {
         Weather(WeatherObj),
         Volume(VolumeObj),
         Brightness(BrightnessObj),
-        Temperature(String, f64),
+        Temperature(String, f32),
         Network(NetworkObj),
         Error(String)
     }
@@ -489,7 +489,7 @@ fn app_startup(application: &gtk::Application) {
             for line in reader.lines() {
                 match line {
                     Ok(data) => {
-                        println!("Evento di rete: {}", data);
+                        // println!("Evento di rete: {}", data);
                         if let Ok(net) = serde_json::from_str(&data) {
                             let _ = sender.send(SysUpdate::Network(net));
                         } else {
@@ -505,15 +505,21 @@ fn app_startup(application: &gtk::Application) {
         });
     }
 
-    /* fn get_sys_temperatures () -> SysUpdate {
+    fn get_sys_temperatures () -> SysUpdate {
         let components = sysinfo::Components::new_with_refreshed_list();
         println!("=> components:");
         for component in &components {
-            println!("{component:?}");
+            // println!("{component:?}");
+            if component.label() == "Tctl" {
+                if let Some(temp) = component.temperature() {
+                    return SysUpdate::Temperature(component.label().into(), temp);
+                } else {
+                    return SysUpdate::Error("Temperature Tctl found but none".to_string());
+                }
+            }
         }
-        SysUpdate::Temperature("Prova", 3f)
+        SysUpdate::Error("Temperature Tctl not found".to_string())
     }
-    get_sys_temperatures(); */
 
     /* fn spawn_volume_monitor(sender: glib::Sender<SysUpdate>) {
         std::thread::spawn(move || {
@@ -562,7 +568,7 @@ fn app_startup(application: &gtk::Application) {
                     (&*format!("{}", m5), m5/max * 100.0, m5color),
                     (&*format!("{}", m15), m15/max * 100.0, m15color)
                 ].to_vec()); */
-                let color = get_color_gradient(1., 3., m1/m5);
+                let color = get_color_gradient(1., 3., m1/m5, false);
                 info_grid
                     .update_value("loadavg", &*format!("[{:.2} {:.2} {:.2}]", m1, m5, m15))
                     .update_color("loadavg", &color);
@@ -573,7 +579,7 @@ fn app_startup(application: &gtk::Application) {
                 let tsh = ByteSize::b(ts).display().iec().to_string();
                 // let uwh = ByteSize::b(uw).display().iec().to_string();
                 let memory_ratio = um as f64 / tm as f64;
-                let memory_color = get_color_gradient(50.0, 90.0, memory_ratio * 100.0);
+                let memory_color = get_color_gradient(50.0, 90.0, memory_ratio * 100.0, false);
 
                 let swap_ratio = us as f64 / ts as f64;
                 // let swap_color = get_color_gradient(40.0, 90.0, swap_ratio * 100.0);
@@ -598,7 +604,7 @@ fn app_startup(application: &gtk::Application) {
             SysUpdate::Disk(_name, _mount_point, avb, total) => {
                 let totalh = ByteSize::b(total).display().iec().to_string();
                 let disk_ratio = (total - avb) as f64 / total as f64;
-                let disk_color = get_color_gradient(50.0, 90.0, disk_ratio * 100.0);
+                let disk_color = get_color_gradient(60.0, 90.0, disk_ratio * 100.0, false);
                 // range_sys_disk_clone.set_value(disk_ratio * 100.0);
                 // apply_scale_color(&range_sys_disk_clone, &disk_color);
                 // label_sys_disk_clone.set_markup(&format!("<span foreground=\"{}\">󰋊 {:.0}% of {} on {}</span>", disk_color, disk_ratio * 100.0, totalh, name));
@@ -613,7 +619,7 @@ fn app_startup(application: &gtk::Application) {
             },
             SysUpdate::Volume(volume) => {
                 let text = if volume.value == 0 { "Muted".into() } else { format!("{}%", volume.value) };
-                let volume_color = get_color_gradient(30.0, 60.0, volume.value as f64);
+                let volume_color = get_color_gradient(30.0, 90.0, volume.value as f64, false);
                 info_grid.update_value("volume", &text);
                 info_grid.update_icon("volume", &*volume.icon);
                 info_grid.update_color("volume", &volume_color);
@@ -626,19 +632,23 @@ fn app_startup(application: &gtk::Application) {
                 // info_grid.update_color("brightness", &brightness_color);
             },
             SysUpdate::Temperature(sensor, value) => {
-                let text = format!("{}*C", value);
-                // let brightness_color = get_color_gradient(30.0, 60.0, brightness.percentage as f64);
+                let text = format!("{:.0}°C", value);
+                let temp_color = get_color_gradient(80.0, 99.0, value as f64, false);
                 info_grid.update_value("temp", &text);
-                // info_grid.update_icon("temp", "");
-                // info_grid.update_color("brightness", &brightness_color);
+                let icon = if value < 80.0 { "" } else 
+                                         if value < 85.0 { "" } else
+                                         if value < 90.0 { "" } else
+                                         if value < 95.0 { "" } else { "" };
+                info_grid.update_icon("temp", icon);
+                info_grid.update_color("temp", &temp_color);
             },
             SysUpdate::Network(net) => {
                 let text = format!("{}%", net.signal);
-                // let brightness_color = get_color_gradient(30.0, 60.0, brightness.percentage as f64);
+                let color = get_color_gradient(20.0, 70.0, net.signal as f64, true);
                 info_grid.update_value("network", &text);
                 info_grid.update_icon("network", &net.icon);
                 // info_grid.update_icon("temp", "");
-                // info_grid.update_color("brightness", &brightness_color);
+                info_grid.update_color("network", &color);
             },
             SysUpdate::Error(error) => {
                 println!("ERROR: {}", error);
@@ -660,6 +670,7 @@ fn app_startup(application: &gtk::Application) {
         loop {
             if counter % 2 == 0 { sender.send(get_load_avg()).expect("Send failed") };
             if counter % 2 == 0 { sender.send(get_ram_info()).expect("Send failed") };
+            if counter % 2 == 0 { sender.send(get_sys_temperatures()).expect("Send failed") };
             sender.send(get_volume()).expect("Send failed");
             sender.send(get_brightness()).expect("Send failed");
             counter += 1;
