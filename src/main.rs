@@ -468,8 +468,8 @@ fn app_startup(application: &gtk::Application) {
         let output = Command::new("/home/vncnz/.config/eww/scripts/brightness.sh").arg("json").output();
         let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
         // println!("\n{:?}", stdout);
-        if let Ok(volume) = serde_json::from_str(&stdout) {
-            SysUpdate::Brightness(volume)
+        if let Ok(brightness) = serde_json::from_str(&stdout) {
+            SysUpdate::Brightness(brightness)
         } else {
             SysUpdate::Error("Error with serde and brightness data".to_string())
         }
