@@ -568,7 +568,7 @@ fn app_startup(application: &gtk::Application) {
                     (&*format!("{}", m5), m5/max * 100.0, m5color),
                     (&*format!("{}", m15), m15/max * 100.0, m15color)
                 ].to_vec()); */
-                let color = get_color_gradient(1., 2., m1/m5, false);
+                let color = get_color_gradient(1.2, 2., m1/m5, false);
                 info_grid
                     .update_value("loadavg", &*format!("[{:.2} {:.2} {:.2}]", m1, m5, m15))
                     .update_color("loadavg", &color);
@@ -619,7 +619,7 @@ fn app_startup(application: &gtk::Application) {
             },
             SysUpdate::Volume(volume) => {
                 let text = if volume.value == 0 { "Muted".into() } else { format!("{}%", volume.value) };
-                let volume_color = get_color_gradient(30.0, 90.0, volume.value as f64, false);
+                let volume_color = get_color_gradient(40.0, 100.0, volume.value as f64, false);
                 info_grid.update_value("volume", &text);
                 info_grid.update_icon("volume", &*volume.icon);
                 info_grid.update_color("volume", &volume_color);
