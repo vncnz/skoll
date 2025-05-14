@@ -568,7 +568,7 @@ fn app_startup(application: &gtk::Application) {
                     (&*format!("{}", m5), m5/max * 100.0, m5color),
                     (&*format!("{}", m15), m15/max * 100.0, m15color)
                 ].to_vec()); */
-                let color = get_color_gradient(1., 3., m1/m5, false);
+                let color = get_color_gradient(1., 2., m1/m5, false);
                 info_grid
                     .update_value("loadavg", &*format!("[{:.2} {:.2} {:.2}]", m1, m5, m15))
                     .update_color("loadavg", &color);
@@ -579,7 +579,7 @@ fn app_startup(application: &gtk::Application) {
                 let tsh = ByteSize::b(ts).display().iec().to_string();
                 // let uwh = ByteSize::b(uw).display().iec().to_string();
                 let memory_ratio = um as f64 / tm as f64;
-                let memory_color = get_color_gradient(50.0, 90.0, memory_ratio * 100.0, false);
+                let memory_color = get_color_gradient(60.0, 90.0, memory_ratio * 100.0, false);
 
                 let swap_ratio = us as f64 / ts as f64;
                 // let swap_color = get_color_gradient(40.0, 90.0, swap_ratio * 100.0);
@@ -644,7 +644,7 @@ fn app_startup(application: &gtk::Application) {
             },
             SysUpdate::Network(net) => {
                 let text = format!("{}%", net.signal);
-                let color = get_color_gradient(20.0, 70.0, net.signal as f64, true);
+                let color = get_color_gradient(20.0, 60.0, net.signal as f64, true);
                 info_grid.update_value("network", &text);
                 info_grid.update_icon("network", &net.icon);
                 // info_grid.update_icon("temp", "");
