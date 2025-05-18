@@ -157,7 +157,7 @@ impl InfoView for InfoBar {
             // let label = Label::new(Some(label_text));
             // label.set_halign(Align::Start);
 
-            let value = Label::new(Some("…"));
+            let value = Label::new(Some("---"));
             value.set_halign(Align::Start);
             value.set_xalign(1.0);
             value.style_context().add_class("value");
