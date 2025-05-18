@@ -23,6 +23,7 @@ pub struct NiriWorkspace {
 }
 
 pub fn get_niri_windows () -> (Vec<NiriWindow>, HashMap<u8, NiriWorkspace>) {
+    // (Vec::new(), HashMap::new())
     let windows: Vec<NiriWindow>;
     {
         let output = Command::new("niri").arg("msg").arg("-j").arg("windows").output();

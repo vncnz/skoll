@@ -65,6 +65,8 @@ use sysinfo::{Disks, System};
 
 use bytesize::ByteSize;
 
+use std::time::Instant;
+
 /* pub fn get_from_map<'a, K: Eq + std::hash::Hash, V>(map: &'a HashMap<K, V>, key: &K) -> Option<&'a V> {
     map.get(key) // .expect(&format!("Key not found in map"))
 } */
@@ -112,9 +114,13 @@ pub struct NetworkObj {
     pub wifi: i8
 }
 
+fn create_gtk_structure () { // TODO
+
+}
+
 fn app_startup(application: &gtk::Application) {
 
-    
+    let t0 = Instant::now();
 
     // Stampa le finestre
     // println!("Finestre aperte:");
@@ -129,6 +135,7 @@ fn app_startup(application: &gtk::Application) {
 
 
     let config = Config::load();
+    let config2 = Config::load();
     let launch_cgroups = config.cgroups;
     let cmd_prefix = config.command_prefix.clone();
 
@@ -245,9 +252,16 @@ fn app_startup(application: &gtk::Application) {
 
     let history = Rc::new(RefCell::new(load_history(config.prune_history)));
 
+    let tn0 = Instant::now();
     let (windows, workspaces_map) = get_niri_windows();
-    let mut entry_hash_map = load_entries(&config, &history.borrow());
+    let tn1 = Instant::now();
     let entry_windows_hash_map = load_entries_running(&config, windows, workspaces_map);
+    let tn2 = Instant::now();
+
+    println!("⏱️ get_niri_windows: {:?}", tn1 - tn0);
+    println!("⏱️ compute_niri_entries: {:?}", tn2 - tn1);
+
+    let mut entry_hash_map = load_entries(&config, &history.borrow());
 
     entry_hash_map.extend(entry_windows_hash_map);
 
@@ -266,6 +280,17 @@ fn app_startup(application: &gtk::Application) {
                 true
             },
             Down | KP_Down | Tab if entry.has_focus() => {
+/*let (windows, workspaces_map) = get_niri_windows();
+//let tn1 = Instant::now();
+
+let entry_windows_hash_map = load_entries_running(&config2, windows, workspaces_map);
+
+let entries = Rc::new(RefCell::new(entry_windows_hash_map));
+
+for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
+    listbox.add(row);
+}*/
+
                 if let Some(r0) = listbox.row_at_index(0) {
                     let es = entries.borrow();
                     if r0.is_selected() {
@@ -714,6 +739,14 @@ fn app_startup(application: &gtk::Application) {
     } else {
         println!("\n\nNO DISPLAY\n\n");
     }
+
+    let t1 = Instant::now();
+    println!("⏱️ app_startup:        {:?}", t1 - t0);
+
+    window.connect_realize(move |_| {
+        let t_realized = Instant::now();
+        println!("🖼️ Window realized at {:?}", t_realized - t0);
+    });
 
     window.show_all()
 }
