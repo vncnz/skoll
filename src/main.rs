@@ -29,6 +29,7 @@ use libc::LC_ALL;
 use serde_derive::Deserialize;
 use std::env::args;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::fs;
 
 mod consts;
 use consts::*;
@@ -59,7 +60,7 @@ use std::process::{Command, Stdio};
 
 use std::io::{BufReader, BufRead};
 
-use serde_json;
+use serde_json::{self, Value};
 
 use sysinfo::{Disks, System};
 
@@ -564,6 +565,30 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
         SysUpdate::Error("Temperature Tctl not found".to_string())
     }
 
+    fn get2 (sender: glib::Sender<SysUpdate>) {
+        if let Ok(contents) = fs::read_to_string("/tmp/ratatoskr.json") {
+            let res: Result<Value, serde_json::Error> = serde_json::from_str(&contents);
+            if let Ok(data) = res {
+                if let [Some(tm), Some(um), Some(ts), Some(us)] = [
+                    data["ram"]["total_memory"].as_u64(),
+                    data["ram"]["used_memory"].as_u64(),
+                    data["ram"]["total_swap"].as_u64(),
+                    data["ram"]["used_swap"].as_u64()
+                ] {
+                    sender.send(SysUpdate::RAM(tm, um, ts, us)).expect("Send error");
+                } else {
+                    println!("File opened, ram not found");
+                }
+            } else {
+                // File exists but contains shit
+                println!("File exists but contains shit");
+            }
+        } else {
+            // No file
+            println!("No file");
+        }
+    }
+
     /* fn spawn_volume_monitor(sender: glib::Sender<SysUpdate>) {
         std::thread::spawn(move || {
             let child = Command::new("pactl")
@@ -592,6 +617,8 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
     
 
     let (sender, receiver) = glib::MainContext::channel::<SysUpdate>(glib::PRIORITY_DEFAULT);
+
+    // get2(sender.clone());
 
     // In main thread: connessione all'aggiornamento
     receiver.attach(None, move |info: SysUpdate| {
