@@ -114,10 +114,6 @@ pub struct NetworkObj {
     pub wifi: i8
 }
 
-fn create_gtk_structure () { // TODO
-
-}
-
 fn app_startup(application: &gtk::Application) {
 
     let t0 = Instant::now();
