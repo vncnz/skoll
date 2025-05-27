@@ -555,7 +555,6 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
 
     fn get_sys_temperatures () -> SysUpdate {
         let components = sysinfo::Components::new_with_refreshed_list();
-        println!("=> components:");
         for component in &components {
             // println!("{component:?}");
             if component.label() == "Tctl" {
