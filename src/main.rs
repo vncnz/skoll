@@ -637,7 +637,7 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
 
     let (sender, receiver) = glib::MainContext::channel::<SysUpdate>(glib::PRIORITY_DEFAULT);
 
-    get2(sender.clone());
+    // get2(sender.clone());
 
     // In main thread: connessione all'aggiornamento
     receiver.attach(None, move |info: SysUpdate| {
