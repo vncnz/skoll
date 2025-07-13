@@ -451,21 +451,21 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
     }
 
 
-    fn get_load_avg() -> SysUpdate {
+    /* fn get_load_avg() -> SysUpdate {
         if let Ok(output) = std::fs::read_to_string("/proc/loadavg") {
             let parts: Vec<&str> = output.split_whitespace().collect();
             SysUpdate::LoadAvg(parts[0].parse().expect("Error 1m"), parts[1].parse().expect("Error 5m"), parts[2].parse().expect("Error 15m"))
         } else {
             SysUpdate::Error("Errore".into())
         }
-    }
+    } */
 
-    fn get_ram_info() -> SysUpdate {
+    /* fn get_ram_info() -> SysUpdate {
         let mut sys = System::new();
         sys.refresh_memory();
 
         SysUpdate::RAM(sys.total_memory(), sys.used_memory(), sys.total_swap(), sys.used_swap())
-    }
+    } */
 
     fn get_disk_info() -> SysUpdate {
         let disks = Disks::new_with_refreshed_list();
@@ -550,7 +550,7 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
         });
     }
 
-    fn get_sys_temperatures () -> SysUpdate {
+    /* fn get_sys_temperatures () -> SysUpdate {
         let components = sysinfo::Components::new_with_refreshed_list();
         for component in &components {
             // println!("{component:?}");
@@ -563,7 +563,7 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
             }
         }
         SysUpdate::Error("Temperature Tctl not found".to_string())
-    }
+    } */
 
     fn get2 (sender: glib::Sender<SysUpdate>) {
         if let Ok(contents) = fs::read_to_string("/tmp/ratatoskr.json") {
@@ -578,6 +578,25 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
                     sender.send(SysUpdate::RAM(tm, um, ts, us)).expect("Send error");
                 } else {
                     println!("File opened, ram not found");
+                }
+
+                if let [Some(m1), Some(m5), Some(m15)] = [
+                    data["loadavg"]["m1"].as_f64(),
+                    data["loadavg"]["m5"].as_f64(),
+                    data["loadavg"]["m15"].as_f64()
+                ] {
+                    sender.send(SysUpdate::LoadAvg(m1, m5, m15)).expect("Send error");
+                } else {
+                    println!("File opened, loadavg not found");
+                }
+
+                if let (Some(name), Some(value)) = (
+                    data["temperature"]["sensor"].as_str(),
+                    data["temperature"]["value"].as_f64()
+                 ) {
+                    sender.send(SysUpdate::Temperature(name.to_string(), value as f32)).expect("Send error");
+                } else {
+                    println!("File opened, temperature not found");
                 }
             } else {
                 // File exists but contains shit
@@ -618,7 +637,7 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
 
     let (sender, receiver) = glib::MainContext::channel::<SysUpdate>(glib::PRIORITY_DEFAULT);
 
-    // get2(sender.clone());
+    get2(sender.clone());
 
     // In main thread: connessione all'aggiornamento
     receiver.attach(None, move |info: SysUpdate| {
@@ -738,11 +757,14 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
         // sender.send(get_weather()).expect("Send failed");
         let mut counter = 0;
         loop {
-            if counter % 2 == 0 { sender.send(get_load_avg()).expect("Send failed") };
-            if counter % 2 == 0 { sender.send(get_ram_info()).expect("Send failed") };
-            if counter % 2 == 0 { sender.send(get_sys_temperatures()).expect("Send failed") };
+            // if counter % 2 == 0 { sender.send(get_load_avg()).expect("Send failed") };
+            // if counter % 2 == 0 { sender.send(get_ram_info()).expect("Send failed") };
+            // if counter % 2 == 0 { sender.send(get_sys_temperatures()).expect("Send failed") };
             sender.send(get_volume()).expect("Send failed");
             sender.send(get_brightness()).expect("Send failed");
+
+            if counter % 2 == 0 { get2(sender.clone()) };
+
             counter += 1;
             std::thread::sleep(std::time::Duration::from_secs(2));
         }
