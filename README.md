@@ -7,14 +7,6 @@ Please note that this is a personal project, for personal use, developed in my (
 This project started as a copy of Sirula project by Dorian Rudolph. I think I'll heavely rewrite/modify the code to archieve what I have in mind but I needed a starting point because I've never developed anything related to Wayland nor in Rust.
 
 ## Known bugs and missing features
-- [x] Open apps must be immediately recognizable and monitor/workspace infos in the row
-- [x] Open apps don't have to open a new instance but focus the existing one
-- [x] Open GitHub provokes panic, it seems to be about the app_id being the display_name
-- [x] Fullscreen background and UI refactoring
-- [ ] PageUp and PageDown keys? Home and End keys?
-- [x] Remove fixed size for fullscreen
+- [ ] Move entries load after window opening
+- [ ] Move Niri windows load after window opening
 - [ ] Create the possibility of custom commands passed by as arguments -- study the compatibility with fuzzel et similia for potential replacement
-- [ ] Network info
-- [x] Avg load
-- [ ] Random sentence/quote from a list in toml configuration?
-- [ ] Generic input from external source?
