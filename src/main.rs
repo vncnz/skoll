@@ -72,6 +72,8 @@ use std::time::Instant;
     map.get(key) // .expect(&format!("Key not found in map"))
 } */
 
+static TEST_COLORS: bool = false;
+
 #[derive(Deserialize)]
 pub struct WeatherObj {
     pub icon: String,
@@ -186,7 +188,7 @@ fn app_startup(application: &gtk::Application) {
         .valign(gtk::Align::Fill)
         .build();
 
-        let info_items = vec![
+        let mut info_items = vec![
             ("loadavg".into(), "Load avg".into(), "󰬢".into(), "".into()),
             ("ram".into(), "RAM".into(), "󰍛".into(), "".into()),
             // ("swap".into(), "SWAP".into(), "󰍛".into(), "".into()),
@@ -209,20 +211,38 @@ fn app_startup(application: &gtk::Application) {
             // ("col9".into(), "col1".into(), "".into(), "".into()),
             // ("col10".into(), "col11".into(), "".into(), "".into())
         ];
+        if TEST_COLORS {
+            let colors_test = vec![
+                ("col0".into(), "col0".into(), "".into(), "".into()),
+                ("col1".into(), "col1".into(), "".into(), "".into()),
+                ("col2".into(), "col1".into(), "".into(), "".into()),
+                ("col3".into(), "col1".into(), "".into(), "".into()),
+                ("col4".into(), "col1".into(), "".into(), "".into()),
+                ("col5".into(), "col1".into(), "".into(), "".into()),
+                ("col6".into(), "col1".into(), "".into(), "".into()),
+                ("col7".into(), "col1".into(), "".into(), "".into()),
+                ("col8".into(), "col1".into(), "".into(), "".into()),
+                ("col9".into(), "col1".into(), "".into(), "".into()),
+                ("col10".into(), "col11".into(), "".into(), "".into())
+            ];
+            info_items.extend_from_slice(&colors_test);
+        }
         let info_grid = InfoBar::new(&info_items);
         container.add(info_grid.widget());
 
-        // info_grid.update_color("col0", &*get_color_gradient(0., 1., 0.0, false));
-        // info_grid.update_color("col1", &*get_color_gradient(0., 1., 0.1, false));
-        // info_grid.update_color("col2", &*get_color_gradient(0., 1., 0.2, false));
-        // info_grid.update_color("col3", &*get_color_gradient(0., 1., 0.3, false));
-        // info_grid.update_color("col4", &*get_color_gradient(0., 1., 0.4, false));
-        // info_grid.update_color("col5", &*get_color_gradient(0., 1., 0.5, false));
-        // info_grid.update_color("col6", &*get_color_gradient(0., 1., 0.6, false));
-        // info_grid.update_color("col7", &*get_color_gradient(0., 1., 0.7, false));
-        // info_grid.update_color("col8", &*get_color_gradient(0., 1., 0.8, false));
-        // info_grid.update_color("col9", &*get_color_gradient(0., 1., 0.9, false));
-        // info_grid.update_color("col10", &*get_color_gradient(0., 1., 1.0, false));
+        if TEST_COLORS {
+            info_grid.update_color("col0", &*get_color_gradient(0., 1., 0.0, false));
+            info_grid.update_color("col1", &*get_color_gradient(0., 1., 0.1, false));
+            info_grid.update_color("col2", &*get_color_gradient(0., 1., 0.2, false));
+            info_grid.update_color("col3", &*get_color_gradient(0., 1., 0.3, false));
+            info_grid.update_color("col4", &*get_color_gradient(0., 1., 0.4, false));
+            info_grid.update_color("col5", &*get_color_gradient(0., 1., 0.5, false));
+            info_grid.update_color("col6", &*get_color_gradient(0., 1., 0.6, false));
+            info_grid.update_color("col7", &*get_color_gradient(0., 1., 0.7, false));
+            info_grid.update_color("col8", &*get_color_gradient(0., 1., 0.8, false));
+            info_grid.update_color("col9", &*get_color_gradient(0., 1., 0.9, false));
+            info_grid.update_color("col10", &*get_color_gradient(0., 1., 1.0, false));
+        }
     
         // Altrove, ad esempio in un async task:
         // info_grid.update_value("ram", "2.9 GiB");
