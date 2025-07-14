@@ -518,7 +518,7 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
         
     }
 
-    fn get_volume () -> SysUpdate {
+    /* fn get_volume () -> SysUpdate {
         let output = Command::new("/home/vncnz/.config/eww/scripts/volume.sh").arg("json").output();
         let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
         // println!("\n{:?}", stdout);
@@ -527,7 +527,7 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
         } else {
             SysUpdate::Error("Error with serde and volume data".to_string())
         }
-    }
+    } */
 
     fn get_brightness () -> SysUpdate {
         let output = Command::new("/home/vncnz/.config/eww/scripts/brightness.sh").arg("json").output();
@@ -618,6 +618,21 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
                 } else {
                     println!("File opened, temperature not found");
                 }
+
+                if let (Some(icon), Some(value), Some(clazz)) = (
+                    data["volume"]["icon"].as_str(),
+                    data["volume"]["value"].as_f64(),
+                    data["volume"]["clazz"].as_str()
+                 ) {
+                    sender.send(SysUpdate::Volume(VolumeObj {
+                        icon: icon.to_string(),
+                        value: value as i8,
+                        clazz: clazz.to_string()
+                    })).expect("Send error");
+                } else {
+                    println!("File opened, volume not found");
+                }
+
             } else {
                 // File exists but contains shit
                 println!("File exists but contains shit");
@@ -780,7 +795,7 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
             // if counter % 2 == 0 { sender.send(get_load_avg()).expect("Send failed") };
             // if counter % 2 == 0 { sender.send(get_ram_info()).expect("Send failed") };
             // if counter % 2 == 0 { sender.send(get_sys_temperatures()).expect("Send failed") };
-            sender.send(get_volume()).expect("Send failed");
+            // sender.send(get_volume()).expect("Send failed");
             sender.send(get_brightness()).expect("Send failed");
 
             if counter % 2 == 0 { get2(sender.clone()) };
