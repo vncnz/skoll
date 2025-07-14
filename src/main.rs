@@ -461,7 +461,7 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
     enum SysUpdate {
         LoadAvg(f64, f64, f64, Option<String>),
         RAM(u64, u64, u64, u64),
-        Disk(String, String, u64, u64),
+        Disk(u64, u64, u64, Option<String>),
         Weather(WeatherObj),
         Volume(VolumeObj),
         Brightness(BrightnessObj),
@@ -487,7 +487,7 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
         SysUpdate::RAM(sys.total_memory(), sys.used_memory(), sys.total_swap(), sys.used_swap())
     } */
 
-    fn get_disk_info() -> SysUpdate {
+    /* fn get_disk_info() -> SysUpdate {
         let disks = Disks::new_with_refreshed_list();
         for disk in &disks {
             if (disk as &sysinfo::Disk).mount_point() == std::path::Path::new("/") {
@@ -504,7 +504,7 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
             }
         }
         SysUpdate::Error("Disk not found".to_string())
-    }
+    } */
 
     fn get_weather () -> SysUpdate {
         let output = Command::new("/home/vncnz/.config/eww/scripts/meteo.sh").arg("'Desenzano Del Garda'").arg("45.457692").arg("10.570684").output();
@@ -635,6 +635,18 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
                     println!("File opened, volume not found");
                 }
 
+                if let (Some(total), Some(used), Some(percent), color) = (
+                    data["disk"]["total_size"].as_u64(),
+                    data["disk"]["used_size"].as_u64(),
+                    data["disk"]["used_percent"].as_u64(),
+                    data["disk"]["color"].as_str()
+                 ) {
+                    let c = if let Some(col) = color { Some(col.to_string()) } else { None };
+                    sender.send(SysUpdate::Disk(total, used, percent, c)).expect("Send error");
+                } else {
+                    println!("File opened, disk not found");
+                }
+
             } else {
                 // File exists but contains shit
                 println!("File exists but contains shit");
@@ -727,16 +739,17 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
                 // info_grid.update_value("swap", &*format!("{:.0}% of {}", swap_ratio * 100.0, tsh));
                 // info_grid.update_color("swap", &swap_color);
             },
-            SysUpdate::Disk(_name, _mount_point, avb, total) => {
+            SysUpdate::Disk(total, _used, percent, rat_color) => {
                 let totalh = ByteSize::b(total).display().iec().to_string();
-                let disk_ratio = (total - avb) as f64 / total as f64;
-                let disk_color = get_color_gradient(60.0, 90.0, disk_ratio * 100.0, false);
+                // let disk_ratio = (total - avb) as f64 / total as f64;
+                // let disk_color = get_color_gradient(60.0, 90.0, percent as f64, false);
                 // range_sys_disk_clone.set_value(disk_ratio * 100.0);
                 // apply_scale_color(&range_sys_disk_clone, &disk_color);
                 // label_sys_disk_clone.set_markup(&format!("<span foreground=\"{}\">󰋊 {:.0}% of {} on {}</span>", disk_color, disk_ratio * 100.0, totalh, name));
+                let color = if rat_color == None { get_color_gradient(60.0, 90.0, percent as f64, false) } else { rat_color.unwrap() };
 
-                info_grid.update_value("disk", &*format!("{:.0}% of {}", disk_ratio * 100.0, totalh));
-                info_grid.update_color("disk", &disk_color);
+                info_grid.update_value("disk", &*format!("{:.0}% of {}", percent as f64, totalh));
+                info_grid.update_color("disk", &color);
             },
             SysUpdate::Weather(weather) => {
                 let temp_text = format!("{}{}", weather.temp, weather.temp_unit);
@@ -789,7 +802,7 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
     spawn_network_monitor(sender.clone());
 
     std::thread::spawn(move || {
-        sender.send(get_disk_info()).expect("Send failed");
+        // sender.send(get_disk_info()).expect("Send failed");
         sender.send(get_weather()).expect("Send failed");
         // sender.send(get_weather()).expect("Send failed");
         let mut counter = 0;
