@@ -459,7 +459,7 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
     // let range_sys_ram = ScaleBuilder::new().orientation(gtk::Orientation::Horizontal).adjustment(&memory_adjustment).draw_value(false).sensitive(false).build();
 
     enum SysUpdate {
-        LoadAvg(f64, f64, f64),
+        LoadAvg(f64, f64, f64, Option<String>),
         RAM(u64, u64, u64, u64),
         Disk(String, String, u64, u64),
         Weather(WeatherObj),
@@ -600,12 +600,14 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
                     println!("File opened, ram not found");
                 }
 
-                if let [Some(m1), Some(m5), Some(m15)] = [
+                if let (Some(m1), Some(m5), Some(m15), color) = (
                     data["loadavg"]["m1"].as_f64(),
                     data["loadavg"]["m5"].as_f64(),
-                    data["loadavg"]["m15"].as_f64()
-                ] {
-                    sender.send(SysUpdate::LoadAvg(m1, m5, m15)).expect("Send error");
+                    data["loadavg"]["m15"].as_f64(),
+                    data["loadavg"]["color"].as_str()
+                ) {
+                    let c = if let Some(col) = color { Some(col.to_string()) } else { None };
+                    sender.send(SysUpdate::LoadAvg(m1, m5, m15, c)).expect("Send error");
                 } else {
                     println!("File opened, loadavg not found");
                 }
@@ -677,7 +679,7 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
     // In main thread: connessione all'aggiornamento
     receiver.attach(None, move |info: SysUpdate| {
         match info {
-            SysUpdate::LoadAvg(m1, m5, m15) => {
+            SysUpdate::LoadAvg(m1, m5, m15, rat_color) => {
                 // label_sys_avg_clone.set_text(&format!("󰬢 {} {} {}", m1, m5, m15));
                 /* let max = f64::max(m1, f64::max(m5, m15));
                 let min = f64::min(m1, f64::min(m5, m15));
@@ -692,7 +694,7 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
                     (&*format!("{}", m5), m5/max * 100.0, m5color),
                     (&*format!("{}", m15), m15/max * 100.0, m15color)
                 ].to_vec()); */
-                let color = get_color_gradient(1.2, 2., m1/m5, false);
+                let color = if rat_color == None { get_color_gradient(1.2, 2., m1/m5, false) } else { rat_color.unwrap() };
                 info_grid
                     .update_value("loadavg", &*format!("[{:.2} {:.2} {:.2}]", m1, m5, m15))
                     .update_color("loadavg", &color);
