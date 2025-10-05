@@ -441,9 +441,12 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
         .build();
 
     for txt in [
+        "HINTS",
         "1. Tray usage: tray-tui",
-        "2. Bluetooth management: bluetui",
-        "3. Network management: impala"
+        "2. System monitor: btop",
+        "3. Disk usage: diskonaut or gdu"
+        // "2. Bluetooth management: bluetui",
+        // "3. Network management: impala"
     ] {
         let label_tip_1 = LabelBuilder::new()
             .label(txt)
