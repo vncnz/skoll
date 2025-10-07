@@ -10,3 +10,6 @@ This project started as a copy of Sirula project by Dorian Rudolph. I think I'll
 - [ ] Move entries load after window opening
 - [ ] Move Niri windows load after window opening
 - [ ] Create the possibility of custom commands passed by as arguments -- study the compatibility with fuzzel et similia for potential replacement
+
+## Dependences
+yay -S gtk-layer-shell
