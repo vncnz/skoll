@@ -29,7 +29,6 @@ use libc::LC_ALL;
 use serde_derive::Deserialize;
 use std::env::args;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
-use std::fs;
 
 mod consts;
 use consts::*;
@@ -58,14 +57,7 @@ use infogrid::*;
 mod ratatoskr_socket;
 use ratatoskr_socket::*;
 
-use std::process::{Command, Stdio};
-// use std::error::Error;
-
-use std::io::{BufReader, BufRead};
-
-use serde_json::{self, Value};
-
-use sysinfo::{Disks, System};
+use std::process::Command;
 
 use bytesize::ByteSize;
 
@@ -137,7 +129,6 @@ fn app_startup(application: &gtk::Application) {
 
 
     let config = Config::load();
-    let config2 = Config::load();
     let launch_cgroups = config.cgroups;
     let cmd_prefix = config.command_prefix.clone();
 
@@ -460,239 +451,12 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
         tips_box.add(&label_tip_1);
     }
     second_row.add(&tips_box);
-    
-    // let memory_adjustment = Adjustment::new(0.0, 0.0, 100.0, 1.0, 10.0, 0.0);
-    // let range_sys_ram = ScaleBuilder::new().orientation(gtk::Orientation::Horizontal).adjustment(&memory_adjustment).draw_value(false).sensitive(false).build();
-
-    enum SysUpdate {
-        LoadAvg(f64, f64, f64, Option<String>),
-        RAM(u64, u64, u64, u64),
-        Disk(u64, u64, u64, Option<String>),
-        Weather(WeatherObj),
-        Volume(VolumeObj),
-        Brightness(BrightnessObj),
-        Temperature(String, f32),
-        Network(NetworkObj),
-        Error(String)
-    }
-
-
-    /* fn get_load_avg() -> SysUpdate {
-        if let Ok(output) = std::fs::read_to_string("/proc/loadavg") {
-            let parts: Vec<&str> = output.split_whitespace().collect();
-            SysUpdate::LoadAvg(parts[0].parse().expect("Error 1m"), parts[1].parse().expect("Error 5m"), parts[2].parse().expect("Error 15m"))
-        } else {
-            SysUpdate::Error("Errore".into())
-        }
-    } */
-
-    /* fn get_ram_info() -> SysUpdate {
-        let mut sys = System::new();
-        sys.refresh_memory();
-
-        SysUpdate::RAM(sys.total_memory(), sys.used_memory(), sys.total_swap(), sys.used_swap())
-    } */
-
-    /* fn get_disk_info() -> SysUpdate {
-        let disks = Disks::new_with_refreshed_list();
-        for disk in &disks {
-            if (disk as &sysinfo::Disk).mount_point() == std::path::Path::new("/") {
-                if let Some(name_str) = (disk as &sysinfo::Disk).name().to_str() {
-                    if let Some(mount_str) = (disk as &sysinfo::Disk).mount_point().to_str() {
-                        return SysUpdate::Disk(
-                            name_str.to_string(),
-                            mount_str.to_string(),
-                            (disk as &sysinfo::Disk).available_space(),
-                            (disk as &sysinfo::Disk).total_space()
-                        )
-                    }
-                }
-            }
-        }
-        SysUpdate::Error("Disk not found".to_string())
-    } */
-
-    fn get_weather () -> SysUpdate {
-        let output = Command::new("/home/vncnz/.config/eww/scripts/meteo.sh").arg("'Desenzano Del Garda'").arg("45.457692").arg("10.570684").output();
-        let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
-        // println!("\n{:?}", stdout);
-        // let weather: WeatherObj;
-        if let Ok(weather) = serde_json::from_str(&stdout) {
-            SysUpdate::Weather(weather)
-        } else {
-            SysUpdate::Error("Error with serde and weather data".to_string())}
-        
-    }
-
-    /* fn get_volume () -> SysUpdate {
-        let output = Command::new("/home/vncnz/.config/eww/scripts/volume.sh").arg("json").output();
-        let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
-        // println!("\n{:?}", stdout);
-        if let Ok(volume) = serde_json::from_str(&stdout) {
-            SysUpdate::Volume(volume)
-        } else {
-            SysUpdate::Error("Error with serde and volume data".to_string())
-        }
-    } */
-
-    fn get_brightness () -> SysUpdate {
-        let output = Command::new("/home/vncnz/.config/eww/scripts/brightness.sh").arg("json").output();
-        let stdout = String::from_utf8(output.unwrap().stdout).unwrap();
-        // println!("\n{:?}", stdout);
-        if let Ok(brightness) = serde_json::from_str(&stdout) {
-            SysUpdate::Brightness(brightness)
-        } else {
-            SysUpdate::Error("Error with serde and brightness data".to_string())
-        }
-    }
-
-    fn spawn_network_monitor (sender: glib::Sender<SysUpdate>) {
-        let mut child = Command::new("/home/vncnz/.config/eww/scripts/network.sh")
-            .arg(&"json")
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("Failed to spawn network monitor");
-    
-        let stdout = child.stdout.take().expect("Failed to open stdout");
-        let reader = BufReader::new(stdout);
-    
-        std::thread::spawn(move || {
-            for line in reader.lines() {
-                match line {
-                    Ok(data) => {
-                        // println!("Evento di rete: {}", data);
-                        if let Ok(net) = serde_json::from_str(&data) {
-                            let _ = sender.send(SysUpdate::Network(net));
-                        } else {
-                            let _ = sender.send(SysUpdate::Error("Error with serde and network data".to_string()));
-                        }
-                    }
-                    Err(err) => {
-                        eprintln!("Errore lettura output network: {}", err);
-                        break;
-                    }
-                }
-            }
-        });
-    }
-
-    /* fn get_sys_temperatures () -> SysUpdate {
-        let components = sysinfo::Components::new_with_refreshed_list();
-        for component in &components {
-            // println!("{component:?}");
-            if component.label() == "Tctl" {
-                if let Some(temp) = component.temperature() {
-                    return SysUpdate::Temperature(component.label().into(), temp);
-                } else {
-                    return SysUpdate::Error("Temperature Tctl found but none".to_string());
-                }
-            }
-        }
-        SysUpdate::Error("Temperature Tctl not found".to_string())
-    } */
-
-    fn get2 (sender: glib::Sender<SysUpdate>) {
-        if let Ok(contents) = fs::read_to_string("/tmp/ratatoskr.json") {
-            let res: Result<Value, serde_json::Error> = serde_json::from_str(&contents);
-            if let Ok(data) = res {
-                if let [Some(tm), Some(um), Some(ts), Some(us)] = [
-                    data["ram"]["total_memory"].as_u64(),
-                    data["ram"]["used_memory"].as_u64(),
-                    data["ram"]["total_swap"].as_u64(),
-                    data["ram"]["used_swap"].as_u64()
-                ] {
-                    sender.send(SysUpdate::RAM(tm, um, ts, us)).expect("Send error");
-                } else {
-                    println!("File opened, ram not found");
-                }
-
-                if let (Some(m1), Some(m5), Some(m15), color) = (
-                    data["loadavg"]["m1"].as_f64(),
-                    data["loadavg"]["m5"].as_f64(),
-                    data["loadavg"]["m15"].as_f64(),
-                    data["loadavg"]["color"].as_str()
-                ) {
-                    let c = if let Some(col) = color { Some(col.to_string()) } else { None };
-                    sender.send(SysUpdate::LoadAvg(m1, m5, m15, c)).expect("Send error");
-                } else {
-                    println!("File opened, loadavg not found");
-                }
-
-                if let (Some(name), Some(value)) = (
-                    data["temperature"]["sensor"].as_str(),
-                    data["temperature"]["value"].as_f64()
-                 ) {
-                    sender.send(SysUpdate::Temperature(name.to_string(), value as f32)).expect("Send error");
-                } else {
-                    println!("File opened, temperature not found");
-                }
-
-                if let (Some(icon), Some(value), Some(clazz)) = (
-                    data["volume"]["icon"].as_str(),
-                    data["volume"]["value"].as_f64(),
-                    data["volume"]["clazz"].as_str()
-                 ) {
-                    sender.send(SysUpdate::Volume(VolumeObj {
-                        icon: icon.to_string(),
-                        value: value as i8,
-                        clazz: clazz.to_string()
-                    })).expect("Send error");
-                } else {
-                    println!("File opened, volume not found");
-                }
-
-                if let (Some(total), Some(used), Some(percent), color) = (
-                    data["disk"]["total_size"].as_u64(),
-                    data["disk"]["used_size"].as_u64(),
-                    data["disk"]["used_percent"].as_u64(),
-                    data["disk"]["color"].as_str()
-                 ) {
-                    let c = if let Some(col) = color { Some(col.to_string()) } else { None };
-                    sender.send(SysUpdate::Disk(total, used, percent, c)).expect("Send error");
-                } else {
-                    println!("File opened, disk not found");
-                }
-
-            } else {
-                // File exists but contains shit
-                println!("File exists but contains shit");
-            }
-        } else {
-            // No file
-            println!("No file");
-        }
-    }
-
-    /* fn spawn_volume_monitor(sender: glib::Sender<SysUpdate>) {
-        std::thread::spawn(move || {
-            let child = Command::new("pactl")
-                .arg("subscribe")
-                .stdout(std::process::Stdio::piped())
-                .spawn();
-
-            if let Ok(mut child) = child {
-                if let Some(stdout) = child.stdout.take() {
-                    let reader = BufReader::new(stdout);
-                    for line in reader.lines() {
-                        if let Ok(line) = line {
-                            if line.contains("sink") {
-                                let volume = get_current_volume(); // definisci tu
-                                let _ = sender.send(SysUpdate::Volume(volume));
-                            }
-                        }
-                    }
-                }
-            } else {
-                eprintln!("Errore nell'eseguire pactl subscribe");
-            }
-        });
-    } */
 
    let (mut sock, rx) = RatatoskrSocket::new("/tmp/ratatoskr.sock");
 
     // In main thread: connessione all'aggiornamento
     rx.attach(None, move |data: PartialMsg| {
-        eprintln!("{:?}", &data);
+        // eprintln!("{:?}", &data);
 
         let res = data.resource.as_str();
         let color = get_color_gradient(data.warning);
@@ -728,7 +492,7 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
                         &format!("{} {}%", info["ssid"].as_str().unwrap(), info["signal"]).to_string()
                     };
                     info_grid.update_value("network", &text);
-                    info_grid.update_icon("network", &info["icon"].as_str().unwrap());
+                    info_grid.update_icon("network", &data.icon);
                     info_grid.update_color("network", &color);
                     // span = Some(Span::styled(format!("[WLAN {}%] [IP {}] [NET {}] ", info["signal"], info["ip"].as_str().unwrap(), info["ssid"].as_str().unwrap
                 }
