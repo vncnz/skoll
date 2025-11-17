@@ -178,7 +178,10 @@ fn hsv_to_rgb(h: f64, s: f64, v: f64) -> (u8, u8, u8) {
     (r, g, b)
 }
 
-pub fn get_color_gradient(min: f64, max: f64, value: f64, reversed: bool) -> String {
+pub fn get_color_gradient(value: f64) -> String {
+    get_color_gradient_full(0.0, 1.0, value, false)
+}
+pub fn get_color_gradient_full(min: f64, max: f64, value: f64, reversed: bool) -> String {
     let clamped = value.clamp(min, max);
     let mut ratio = if (max - min).abs() < f64::EPSILON {
         0.5

@@ -55,6 +55,9 @@ use niri::*;
 mod infogrid;
 use infogrid::*;
 
+mod ratatoskr_socket;
+use ratatoskr_socket::*;
+
 use std::process::{Command, Stdio};
 // use std::error::Error;
 
@@ -188,66 +191,66 @@ fn app_startup(application: &gtk::Application) {
         .valign(gtk::Align::Fill)
         .build();
 
-        let mut info_items = vec![
-            ("loadavg".into(), "Load avg".into(), "󰬢".into(), "".into()),
-            ("ram".into(), "RAM".into(), "󰍛".into(), "".into()),
-            // ("swap".into(), "SWAP".into(), "󰍛".into(), "".into()),
-            ("disk".into(), "Main disk".into(), "󰋊".into(), "".into()),
-            ("weather".into(), "Weather".into(), "".into(), "".into()),
-            // ("cpu".into(), "CPU".into(), "IC".into(), "/path/to/icons/cpu.png".into()),
-            ("volume".into(), "Volume".into(), "󱄡".into(), "".into()),
-            ("brightness".into(), "Brightness".into(), "󱧤".into(), "".into()),
-            ("temp".into(), "Temperature".into(), "󱤋".into(), "".into()),
-            ("network".into(), "Network".into(), "󰲊".into(), "".into()),
-            // ("col0".into(), "col0".into(), "".into(), "".into()),
-            // ("col1".into(), "col1".into(), "".into(), "".into()),
-            // ("col2".into(), "col1".into(), "".into(), "".into()),
-            // ("col3".into(), "col1".into(), "".into(), "".into()),
-            // ("col4".into(), "col1".into(), "".into(), "".into()),
-            // ("col5".into(), "col1".into(), "".into(), "".into()),
-            // ("col6".into(), "col1".into(), "".into(), "".into()),
-            // ("col7".into(), "col1".into(), "".into(), "".into()),
-            // ("col8".into(), "col1".into(), "".into(), "".into()),
-            // ("col9".into(), "col1".into(), "".into(), "".into()),
-            // ("col10".into(), "col11".into(), "".into(), "".into())
+    let mut info_items = vec![
+        ("loadavg".into(), "Load avg".into(), "󰬢".into(), "".into()),
+        ("ram".into(), "RAM".into(), "󰍛".into(), "".into()),
+        // ("swap".into(), "SWAP".into(), "󰍛".into(), "".into()),
+        ("disk".into(), "Main disk".into(), "󰋊".into(), "".into()),
+        ("weather".into(), "Weather".into(), "".into(), "".into()),
+        // ("cpu".into(), "CPU".into(), "IC".into(), "/path/to/icons/cpu.png".into()),
+        ("volume".into(), "Volume".into(), "󱄡".into(), "".into()),
+        ("brightness".into(), "Brightness".into(), "󱧤".into(), "".into()),
+        ("temp".into(), "Temperature".into(), "󱤋".into(), "".into()),
+        ("network".into(), "Network".into(), "󰲊".into(), "".into()),
+        // ("col0".into(), "col0".into(), "".into(), "".into()),
+        // ("col1".into(), "col1".into(), "".into(), "".into()),
+        // ("col2".into(), "col1".into(), "".into(), "".into()),
+        // ("col3".into(), "col1".into(), "".into(), "".into()),
+        // ("col4".into(), "col1".into(), "".into(), "".into()),
+        // ("col5".into(), "col1".into(), "".into(), "".into()),
+        // ("col6".into(), "col1".into(), "".into(), "".into()),
+        // ("col7".into(), "col1".into(), "".into(), "".into()),
+        // ("col8".into(), "col1".into(), "".into(), "".into()),
+        // ("col9".into(), "col1".into(), "".into(), "".into()),
+        // ("col10".into(), "col11".into(), "".into(), "".into())
+    ];
+    if TEST_COLORS {
+        let colors_test = vec![
+            ("col0".into(), "col0".into(), "".into(), "".into()),
+            ("col1".into(), "col1".into(), "".into(), "".into()),
+            ("col2".into(), "col1".into(), "".into(), "".into()),
+            ("col3".into(), "col1".into(), "".into(), "".into()),
+            ("col4".into(), "col1".into(), "".into(), "".into()),
+            ("col5".into(), "col1".into(), "".into(), "".into()),
+            ("col6".into(), "col1".into(), "".into(), "".into()),
+            ("col7".into(), "col1".into(), "".into(), "".into()),
+            ("col8".into(), "col1".into(), "".into(), "".into()),
+            ("col9".into(), "col1".into(), "".into(), "".into()),
+            ("col10".into(), "col11".into(), "".into(), "".into())
         ];
-        if TEST_COLORS {
-            let colors_test = vec![
-                ("col0".into(), "col0".into(), "".into(), "".into()),
-                ("col1".into(), "col1".into(), "".into(), "".into()),
-                ("col2".into(), "col1".into(), "".into(), "".into()),
-                ("col3".into(), "col1".into(), "".into(), "".into()),
-                ("col4".into(), "col1".into(), "".into(), "".into()),
-                ("col5".into(), "col1".into(), "".into(), "".into()),
-                ("col6".into(), "col1".into(), "".into(), "".into()),
-                ("col7".into(), "col1".into(), "".into(), "".into()),
-                ("col8".into(), "col1".into(), "".into(), "".into()),
-                ("col9".into(), "col1".into(), "".into(), "".into()),
-                ("col10".into(), "col11".into(), "".into(), "".into())
-            ];
-            info_items.extend_from_slice(&colors_test);
-        }
-        let info_grid = InfoBar::new(&info_items);
-        container.add(info_grid.widget());
+        info_items.extend_from_slice(&colors_test);
+    }
+    let info_grid = InfoBar::new(&info_items);
+    container.add(info_grid.widget());
 
-        if TEST_COLORS {
-            info_grid.update_color("col0", &*get_color_gradient(0., 1., 0.0, false));
-            info_grid.update_color("col1", &*get_color_gradient(0., 1., 0.1, false));
-            info_grid.update_color("col2", &*get_color_gradient(0., 1., 0.2, false));
-            info_grid.update_color("col3", &*get_color_gradient(0., 1., 0.3, false));
-            info_grid.update_color("col4", &*get_color_gradient(0., 1., 0.4, false));
-            info_grid.update_color("col5", &*get_color_gradient(0., 1., 0.5, false));
-            info_grid.update_color("col6", &*get_color_gradient(0., 1., 0.6, false));
-            info_grid.update_color("col7", &*get_color_gradient(0., 1., 0.7, false));
-            info_grid.update_color("col8", &*get_color_gradient(0., 1., 0.8, false));
-            info_grid.update_color("col9", &*get_color_gradient(0., 1., 0.9, false));
-            info_grid.update_color("col10", &*get_color_gradient(0., 1., 1.0, false));
-        }
-    
-        // Altrove, ad esempio in un async task:
-        // info_grid.update_value("ram", "2.9 GiB");
-        // info_grid.update_icon("vol", "/path/to/icons/volume-muted.png");
-        // info_grid.update_color("cpu", "orange");
+    if TEST_COLORS {
+        info_grid.update_color("col0", &*get_color_gradient(0.0));
+        info_grid.update_color("col1", &*get_color_gradient(0.1));
+        info_grid.update_color("col2", &*get_color_gradient(0.2));
+        info_grid.update_color("col3", &*get_color_gradient(0.3));
+        info_grid.update_color("col4", &*get_color_gradient(0.4));
+        info_grid.update_color("col5", &*get_color_gradient(0.5));
+        info_grid.update_color("col6", &*get_color_gradient(0.6));
+        info_grid.update_color("col7", &*get_color_gradient(0.7));
+        info_grid.update_color("col8", &*get_color_gradient(0.8));
+        info_grid.update_color("col9", &*get_color_gradient(0.9));
+        info_grid.update_color("col10", &*get_color_gradient(1.0));
+    }
+
+    // Altrove, ad esempio in un async task:
+    // info_grid.update_value("ram", "2.9 GiB");
+    // info_grid.update_icon("vol", "/path/to/icons/volume-muted.png");
+    // info_grid.update_color("cpu", "orange");
 
     second_row.add(&search_container);    
     // container.add(&extra_info_box);
@@ -685,86 +688,108 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
         });
     } */
 
-    
-
-    let (sender, receiver) = glib::MainContext::channel::<SysUpdate>(glib::PRIORITY_DEFAULT);
-
-    // get2(sender.clone());
+   let (mut sock, rx) = RatatoskrSocket::new("/tmp/ratatoskr.sock");
 
     // In main thread: connessione all'aggiornamento
-    receiver.attach(None, move |info: SysUpdate| {
-        match info {
-            SysUpdate::LoadAvg(m1, m5, m15, rat_color) => {
-                // label_sys_avg_clone.set_text(&format!("󰬢 {} {} {}", m1, m5, m15));
-                /* let max = f64::max(m1, f64::max(m5, m15));
-                let min = f64::min(m1, f64::min(m5, m15));
-                let r = Some("#FF0000".to_string());
-                let y = Some("#FFFF00".to_string());
-                let g = Some("#00FF00".to_string());
-                let m1color = if m1 == max { r.clone() } else { if m1 == min { g.clone() } else { y.clone() }};
-                let m5color = if m5 == max { r.clone() } else { if m5 == min { g.clone() } else { y.clone() }};
-                let m15color = if m15 == max { r } else { if m15 == min { g } else { y }};
-                avg_infobox.update_data([
-                    (&*format!("{}", m1), m1/max * 100.0, m1color),
-                    (&*format!("{}", m5), m5/max * 100.0, m5color),
-                    (&*format!("{}", m15), m15/max * 100.0, m15color)
-                ].to_vec()); */
-                let color = if rat_color == None { get_color_gradient(1.2, 2., m1/m5, false) } else { rat_color.unwrap() };
-                info_grid
-                    .update_value("loadavg", &*format!("[{:.2} {:.2} {:.2}]", m1, m5, m15))
-                    .update_color("loadavg", &color);
+    rx.attach(None, move |data: PartialMsg| {
+        eprintln!("{:?}", &data);
+
+        let res = data.resource.as_str();
+        let color = get_color_gradient(data.warning);
+        match res {
+            "loadavg" => {
+                if let Some(info) = &data.data {
+                    info_grid
+                        .update_value("loadavg", &*format!("[{:.2} {:.2} {:.2}]", info["m1"], info["m5"], info["m15"]))
+                        .update_color("loadavg", &color);
+                }
             },
-            SysUpdate::RAM(tm, um, ts, us) => {
-                // let umh = ByteSize::b(um).display().iec().to_string();
-                let tmh = ByteSize::b(tm).display().iec().to_string();
-                let tsh = ByteSize::b(ts).display().iec().to_string();
-                // let uwh = ByteSize::b(uw).display().iec().to_string();
-                let memory_ratio = um as f64 / tm as f64;
-                let memory_color = get_color_gradient(60.0, 90.0, memory_ratio * 100.0, false);
-
-                let swap_ratio = us as f64 / ts as f64;
-                // let swap_color = get_color_gradient(40.0, 90.0, swap_ratio * 100.0);
-
-                /*  range_sys_ram_clone.set_value(memory_ratio * 100.0);
-                apply_scale_color(&range_sys_ram_clone, &memory_color);
-
-                range_sys_swap_clone.set_value(swap_ratio * 100.0);
-                apply_scale_color(&range_sys_swap_clone, &swap_color); */
-
-                /* ram_infobox.update_data([
-                    (&*format!("{:.0}% of {}", memory_ratio * 100.0, tmh), memory_ratio * 100.0, Some(memory_color.clone())),
-                    (&*format!("{:.0}% of {}", swap_ratio * 100.0, tsh), 50.0, Some(swap_color.clone()))
-                ].to_vec()); */
-
-                info_grid.update_value("ram", &*format!("M: {:.0}% of {}\nS: {:.0}% of {}", memory_ratio * 100.0, tmh, swap_ratio * 100.0, tsh));
-                info_grid.update_color("ram", &memory_color);
-
-                // info_grid.update_value("swap", &*format!("{:.0}% of {}", swap_ratio * 100.0, tsh));
-                // info_grid.update_color("swap", &swap_color);
+            "ram" => {
+                if let Some(info) = &data.data {
+                    let tmh = ByteSize::b(info["total_memory"].as_u64().unwrap()).display().iec().to_string();
+                    let tsh = ByteSize::b(info["total_swap"].as_u64().unwrap()).display().iec().to_string();
+                    
+                    info_grid.update_value("ram", &*format!("M: {:.0}% of {}\nS: {:.0}% of {}", info["mem_percent"], tmh, info["swap_percent"], tsh));
+                    info_grid.update_color("ram", &color);
+                }
             },
-            SysUpdate::Disk(total, _used, percent, rat_color) => {
-                let totalh = ByteSize::b(total).display().iec().to_string();
-                // let disk_ratio = (total - avb) as f64 / total as f64;
-                // let disk_color = get_color_gradient(60.0, 90.0, percent as f64, false);
-                // range_sys_disk_clone.set_value(disk_ratio * 100.0);
-                // apply_scale_color(&range_sys_disk_clone, &disk_color);
-                // label_sys_disk_clone.set_markup(&format!("<span foreground=\"{}\">󰋊 {:.0}% of {} on {}</span>", disk_color, disk_ratio * 100.0, totalh, name));
-                let color = if rat_color == None { get_color_gradient(60.0, 90.0, percent as f64, false) } else { rat_color.unwrap() };
-
-                info_grid.update_value("disk", &*format!("{:.0}% of {}", percent as f64, totalh));
-                info_grid.update_color("disk", &color);
+            "disk" => {
+                if let Some(info) = &data.data {
+                    let totalh = ByteSize::b(info["total_size"].as_u64().unwrap()).display().iec().to_string();
+                    info_grid.update_value("disk", &*format!("{:.0}% of {}", info["used_percent"], totalh));
+                    info_grid.update_color("disk", &color);
+                }
             },
+            "network" => {
+                if let Some(info) = &data.data {
+                    let text = if info["conn_type"] == "ethernet" {
+                        "ETH"
+                    } else {
+                        &format!("{} {}%", info["ssid"].as_str().unwrap(), info["signal"]).to_string()
+                    };
+                    info_grid.update_value("network", &text);
+                    info_grid.update_icon("network", &info["icon"].as_str().unwrap());
+                    info_grid.update_color("network", &color);
+                    // span = Some(Span::styled(format!("[WLAN {}%] [IP {}] [NET {}] ", info["signal"], info["ip"].as_str().unwrap(), info["ssid"].as_str().unwrap
+                }
+            },
+            "temperature" => {
+                if let Some(info) = &data.data {
+                    let v = info["value"].as_f64().unwrap();
+                    let text = format!("{:.0}°C", v);
+                    info_grid.update_value("temp", &text);
+                    let icon = if v < 80.0 { "" } else 
+                                     if v < 85.0 { "" } else
+                                     if v < 90.0 { "" } else
+                                     if v < 95.0 { "" } else { "" };
+                    info_grid.update_icon("temp", icon);
+                    info_grid.update_color("temp", &color);
+                }
+            },
+            "volume" => {
+                if let Some(info) = &data.data {
+                    let v = info["value"].as_u64().unwrap();
+                    let text = if v == 0 { "Muted".into() } else { format!("{}%", &v) };
+                    info_grid.update_value("volume", &text);
+                    info_grid.update_icon("volume", info["icon"].as_str().unwrap());
+                    info_grid.update_color("volume", &color);
+                }
+            },/*
+            "battery" => {
+                if let Some(info) = &data.data {
+                    let bat_symb = match info["state"].as_str() {
+                        Some("Charging") => { "󱐋" },
+                        Some("Discharging") => { "󰯆" },
+                        _ => { "" }
+                    };
+                    let eta = info["eta"].as_f64().unwrap_or_default().round() as i32;
+                    let h = eta / 60;
+                    let m = eta % 60;
+                    span = Some(Span::styled(format!("[BAT {:.0}%] [{} {}h{}m]", info["percentage"].as_f64().unwrap_or(0.0), bat_symb, h, m), Style::default().fg(color)));
+                }
+            },
+            "ratatoskr" => {
+                if data.warning == 1.0 { span = Some(Span::styled(format!("Ratatoskr disconnected"), Style::default().fg(color))); }
+            },
+            "display" => {},
+            "weather" => {
+                // {"icon": "", "text": "Fog", "temp": 8, "temp_real": 9, "temp_unit": "°C", "day": "0", "icon_name": "fog.svg", "sunrise": "07:15", "sunset": "16:48", "sunrise_mins": 435, "sunset_mins": 1008, "daylight": 34385.75, "locality": "Desenzano Del Garda", "humidity": 99}
+                if let Some(info) = &data.data {
+                    span = Some(Span::styled(format!("[{} {}] ", info["icon"], info["text"]), Style::default().fg(color)));
+                }
+            },*/
+            _ => {
+                // span = Some(Span::styled(format!("[{}] ", data.resource), Style::default().fg(color)));
+            }
+        }
+
+
+
+        /*match info {
             SysUpdate::Weather(weather) => {
                 let temp_text = format!("{}{}", weather.temp, weather.temp_unit);
                 info_grid.update_value("weather", &temp_text);
                 info_grid.update_path("weather", &format!("/home/vncnz/.config/eww/images/weather/{}", weather.icon_name));
-            },
-            SysUpdate::Volume(volume) => {
-                let text = if volume.value == 0 { "Muted".into() } else { format!("{}%", volume.value) };
-                let volume_color = get_color_gradient(40.0, 100.0, volume.value as f64, false);
-                info_grid.update_value("volume", &text);
-                info_grid.update_icon("volume", &*volume.icon);
-                info_grid.update_color("volume", &volume_color);
             },
             SysUpdate::Brightness(brightness) => {
                 let text = format!("{}%", brightness.percentage);
@@ -773,38 +798,26 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
                 info_grid.update_icon("brightness", &*brightness.icon);
                 // info_grid.update_color("brightness", &brightness_color);
             },
-            SysUpdate::Temperature(sensor, value) => {
-                let text = format!("{:.0}°C", value);
-                let temp_color = get_color_gradient(80.0, 99.0, value as f64, false);
-                info_grid.update_value("temp", &text);
-                let icon = if value < 80.0 { "" } else 
-                                         if value < 85.0 { "" } else
-                                         if value < 90.0 { "" } else
-                                         if value < 95.0 { "" } else { "" };
-                info_grid.update_icon("temp", icon);
-                info_grid.update_color("temp", &temp_color);
-            },
-            SysUpdate::Network(net) => {
-                let text = format!("{}%", net.signal);
-                let color = get_color_gradient(20.0, 60.0, net.signal as f64, true);
-                info_grid.update_value("network", &text);
-                info_grid.update_icon("network", &net.icon);
-                // info_grid.update_icon("temp", "");
-                info_grid.update_color("network", &color);
-            },
             SysUpdate::Error(error) => {
                 println!("ERROR: {}", error);
             }
-        }
+        }*/
         // sysdata.loadavg = Some(info);
         // println!("\n\n\n\n{}\n\n\n\n", sysdata.loadavg.unwrap_or_default());
         glib::Continue(true)
     });
 
-
-    spawn_network_monitor(sender.clone());
-
     std::thread::spawn(move || {
+        loop {
+            sock.poll_messages();
+            std::thread::sleep(std::time::Duration::from_millis(300));
+        }
+    });
+
+
+    // spawn_network_monitor(sender.clone());
+
+    /*std::thread::spawn(move || {
         // sender.send(get_disk_info()).expect("Send failed");
         sender.send(get_weather()).expect("Send failed");
         // sender.send(get_weather()).expect("Send failed");
@@ -821,7 +834,7 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
             counter += 1;
             std::thread::sleep(std::time::Duration::from_secs(2));
         }
-    });
+    });*/
 
     window.set_child(Some(&container));
 
