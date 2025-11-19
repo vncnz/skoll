@@ -150,24 +150,28 @@ fn app_startup(application: &gtk::Application) {
 
     let container = BoxBuilder::new()
         .name(ROOT_BOX_NAME)
-        .orientation(gtk::Orientation::Vertical)
-        .width_request(1800)
-        .width_request(500)
+        .orientation(gtk::Orientation::Horizontal)
+        // .width_request(1000)
+        // .width_request(500)
         .valign(gtk::Align::Fill)
-        .halign(gtk::Align::Fill)
+        // .halign(gtk::Align::Fill)
         .vexpand(true)
         .hexpand(true)
         .build();
 
-    let second_row = BoxBuilder::new()
+    let first_col = BoxBuilder::new()
         .name("second_row")
-        .orientation(gtk::Orientation::Horizontal)
-        .expand(true)
-        .halign(gtk::Align::Fill)
+        .orientation(gtk::Orientation::Vertical)
+        .vexpand(true)
+        .hexpand(false)
+        // .halign(gtk::Align::Fill)
         .valign(gtk::Align::Fill)
-        // .hexpand(false)
+        // .margin(50)
+        .margin_top(config.margin_top + 50)
+        .margin_bottom(config.margin_bottom + 50)
+        .margin_start(config.margin_left)
         .build();
-    second_row.set_hexpand(true);
+    first_col.set_hexpand(false);
 
     let search_container = BoxBuilder::new()
         .name("search_container")
@@ -175,7 +179,7 @@ fn app_startup(application: &gtk::Application) {
         .margin_top(config.margin_top)
         .margin_end(config.margin_right)
         .margin_bottom(config.margin_bottom)
-        .margin_start(config.margin_left)
+        .margin_start(50)
         .vexpand(true)
         .hexpand(true)
         .halign(gtk::Align::Fill)
@@ -212,7 +216,6 @@ fn app_startup(application: &gtk::Application) {
         info_items.extend_from_slice(&colors_test);
     }
     let info_grid = InfoBar::new(&info_items);
-    container.add(info_grid.widget());
 
     if TEST_COLORS {
         info_grid.update_color("col0", &*get_color_gradient(0.0));
@@ -227,17 +230,6 @@ fn app_startup(application: &gtk::Application) {
         info_grid.update_color("col9", &*get_color_gradient(0.9));
         info_grid.update_color("col10", &*get_color_gradient(1.0));
     }
-
-    // Altrove, ad esempio in un async task:
-    // info_grid.update_value("ram", "2.9 GiB");
-    // info_grid.update_icon("vol", "/path/to/icons/volume-muted.png");
-    // info_grid.update_color("cpu", "orange");
-
-    second_row.add(&search_container);    
-    // container.add(&extra_info_box);
-    container.add(&second_row);
-
-    // vbox.set_css_classes(&["debug"]);
 
     let entry = EntryBuilder::new().name(SEARCH_ENTRY_NAME).build(); // .width_request(300)
     search_container.pack_start(&entry, false, false, 0);
@@ -419,28 +411,35 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
     let tips_box = BoxBuilder::new()
         .name("tips")
         .orientation(gtk::Orientation::Vertical)
-        .halign(gtk::Align::End)
+        .halign(gtk::Align::Start)
         .valign(gtk::Align::End)
-        .vexpand(true)
+        .vexpand(false)
+        .hexpand(true)
         .build();
 
     for txt in [
         "HINTS",
         "1. Tray usage: tray-tui",
         "2. System monitor: btop",
-        "3. Disk usage: diskonaut or gdu"
+        "3. Disk usage: diskonaut or gdu",
+        "4. Timeout and timer: termdown"
         // "2. Bluetooth management: bluetui",
         // "3. Network management: impala"
     ] {
         let label_tip_1 = LabelBuilder::new()
             .label(txt)
-            .margin(10)
+            // .margin(10)
+            .valign(gtk::Align::End)
             .halign(gtk::Align::Start)
+            .vexpand(true)
             .build();
 
         tips_box.add(&label_tip_1);
     }
-    second_row.add(&tips_box);
+    first_col.add(info_grid.widget());
+    first_col.add(&tips_box);
+    container.add(&first_col);
+    container.add(&search_container);
 
    let (mut sock, rx) = RatatoskrSocket::new("/tmp/ratatoskr.sock");
 

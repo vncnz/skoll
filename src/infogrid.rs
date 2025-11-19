@@ -230,11 +230,11 @@ impl InfoView for InfoBar {
         // info_keys: Vec<(id, label, icon_path)>
         let inforow = BoxBuilder::new()
             .name("info_bar")
-            .orientation(gtk::Orientation::Horizontal)
-            .vexpand(false)
+            .orientation(gtk::Orientation::Vertical)
+            .vexpand(true)
             .hexpand(true)
-            .halign(gtk::Align::Center)
-            .valign(gtk::Align::Fill)
+            .halign(gtk::Align::Start)
+            .valign(gtk::Align::Start)
             .build();
 
         let mut rows = HashMap::new();
