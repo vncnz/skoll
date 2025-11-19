@@ -125,7 +125,7 @@ impl InfoView for InfoBar {
 
         let mut rows = HashMap::new();
 
-        for (_i, (id, _label_text, icon_text, icon_path)) in info_keys.iter().enumerate() {
+        for (_i, (id, label_text, icon_text, icon_path)) in info_keys.iter().enumerate() {
             let icon: Image;
             if !icon_path.is_empty() {
                 icon = Image::from_file(icon_path);
@@ -157,7 +157,7 @@ impl InfoView for InfoBar {
             // let label = Label::new(Some(label_text));
             // label.set_halign(Align::Start);
 
-            let value = Label::new(Some("---"));
+            let value = Label::new(Some(label_text));
             value.set_halign(Align::Start);
             value.set_xalign(1.0);
             value.style_context().add_class("value");

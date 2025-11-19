@@ -183,17 +183,17 @@ fn app_startup(application: &gtk::Application) {
         .build();
 
     let mut info_items = vec![
-        ("loadavg".into(), "Load avg".into(), "󰬢".into(), "".into()),
-        ("ram".into(), "RAM".into(), "󰍛".into(), "".into()),
+        ("loadavg".into(), "N/A".into(), "󰬢".into(), "".into()),
+        ("ram".into(), "N/A".into(), "󰍛".into(), "".into()),
         // ("swap".into(), "SWAP".into(), "󰍛".into(), "".into()),
-        ("disk".into(), "Main disk".into(), "󰋊".into(), "".into()),
-        ("weather".into(), "Weather".into(), "".into(), "".into()),
+        ("disk".into(), "N/A".into(), "󰋊".into(), "".into()),
+        ("weather".into(), "N/A".into(), "".into(), "".into()),
         // ("cpu".into(), "CPU".into(), "IC".into(), "/path/to/icons/cpu.png".into()),
-        ("volume".into(), "Volume".into(), "󱄡".into(), "".into()),
-        ("brightness".into(), "Brightness".into(), "󱧤".into(), "".into()),
-        ("temp".into(), "Temperature".into(), "󱤋".into(), "".into()),
-        ("network".into(), "Network".into(), "󰲊".into(), "".into()),
-        ("battery".into(), "Battery".into(), "x".into(), "".into()),
+        ("volume".into(), "N/A".into(), "󱄡".into(), "".into()),
+        ("brightness".into(), "N/A".into(), "󱧤".into(), "".into()),
+        ("temp".into(), "N/A".into(), "󱤋".into(), "".into()),
+        ("network".into(), "N/A".into(), "󰲊".into(), "".into()),
+        ("battery".into(), "N/A".into(), "x".into(), "".into()),
     ];
     if TEST_COLORS {
         let colors_test = vec![
@@ -490,12 +490,13 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
             "temperature" => {
                 if let Some(info) = &data.data {
                     let v = info["value"].as_f64().unwrap();
-                    let text = format!("{:.0}°C", v);
+                    let text = if v > 0.0 { format!("{:.0}°C", v) } else { "N/A".into() };
                     info_grid.update_value("temp", &text);
-                    let icon = if v < 80.0 { "" } else 
-                                     if v < 85.0 { "" } else
-                                     if v < 90.0 { "" } else
-                                     if v < 95.0 { "" } else { "" };
+                    let def_icon = if v < 80.0 { "" } else 
+                                    if v < 85.0 { "" } else
+                                    if v < 90.0 { "" } else
+                                    if v < 95.0 { "" } else { "" };
+                    let icon = if data.icon == "" { def_icon } else { &data.icon };
                     info_grid.update_icon("temp", icon);
                     info_grid.update_color("temp", &color);
                 }
@@ -536,6 +537,14 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
                     info_grid.update_value("weather", &temp_text);
                     // info_grid.update_path("weather", &format!("/home/vncnz/.config/eww/images/weather/{}", info["icon_name"].as_str().unwrap()));
                     info_grid.update_icon("weather", info["icon"].as_str().unwrap());
+                }
+            },
+            "brightness" => {
+                // {"icon": "", "text": "Fog", "temp": 8, "temp_real": 9, "temp_unit": "°C", "day": "0", "icon_name": "fog.svg", "sunrise": "07:15", "sunset": "16:48", "sunrise_mins": 435, "sunset_mins": 1008, "daylight": 34385.75, "locality": "Desenzano Del Garda", "humidity": 99}
+                if let Some(info) = &data.data {
+                    let temp_text = format!("{}%", info["percentage"]);
+                    info_grid.update_value("brightness", &temp_text);
+                    info_grid.update_icon("brightness", info["icon"].as_str().unwrap());
                 }
             },
             /*
