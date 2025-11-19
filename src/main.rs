@@ -193,17 +193,7 @@ fn app_startup(application: &gtk::Application) {
         ("brightness".into(), "Brightness".into(), "󱧤".into(), "".into()),
         ("temp".into(), "Temperature".into(), "󱤋".into(), "".into()),
         ("network".into(), "Network".into(), "󰲊".into(), "".into()),
-        // ("col0".into(), "col0".into(), "".into(), "".into()),
-        // ("col1".into(), "col1".into(), "".into(), "".into()),
-        // ("col2".into(), "col1".into(), "".into(), "".into()),
-        // ("col3".into(), "col1".into(), "".into(), "".into()),
-        // ("col4".into(), "col1".into(), "".into(), "".into()),
-        // ("col5".into(), "col1".into(), "".into(), "".into()),
-        // ("col6".into(), "col1".into(), "".into(), "".into()),
-        // ("col7".into(), "col1".into(), "".into(), "".into()),
-        // ("col8".into(), "col1".into(), "".into(), "".into()),
-        // ("col9".into(), "col1".into(), "".into(), "".into()),
-        // ("col10".into(), "col11".into(), "".into(), "".into())
+        ("battery".into(), "Battery".into(), "x".into(), "".into()),
     ];
     if TEST_COLORS {
         let colors_test = vec![
@@ -518,30 +508,42 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
                     info_grid.update_icon("volume", info["icon"].as_str().unwrap());
                     info_grid.update_color("volume", &color);
                 }
-            },/*
+            },
             "battery" => {
                 if let Some(info) = &data.data {
                     let bat_symb = match info["state"].as_str() {
                         Some("Charging") => { "󱐋" },
                         Some("Discharging") => { "󰯆" },
-                        _ => { "" }
+                        _ => { info["icon"].as_str().unwrap() }
                     };
+
                     let eta = info["eta"].as_f64().unwrap_or_default().round() as i32;
                     let h = eta / 60;
                     let m = eta % 60;
-                    span = Some(Span::styled(format!("[BAT {:.0}%] [{} {}h{}m]", info["percentage"].as_f64().unwrap_or(0.0), bat_symb, h, m), Style::default().fg(color)));
+
+                    let second_text = if eta > 0 { format!("Eta {}h{}m", h, m) } else { "Stable level".into() };
+                    let text = format!("Level {:.0}%\n{}", info["percentage"].as_f64().unwrap_or(0.0), second_text);
+                    info_grid.update_value("battery", &text);
+                    info_grid.update_icon("battery", &bat_symb);
+                    info_grid.update_color("battery", &color);
                 }
             },
+            "weather" => {
+                // {"icon": "", "text": "Fog", "temp": 8, "temp_real": 9, "temp_unit": "°C", "day": "0", "icon_name": "fog.svg", "sunrise": "07:15", "sunset": "16:48", "sunrise_mins": 435, "sunset_mins": 1008, "daylight": 34385.75, "locality": "Desenzano Del Garda", "humidity": 99}
+                if let Some(info) = &data.data {
+                    // span = Some(Span::styled(format!("[{} {}] ", info["icon"], info["text"]), Style::default().fg(color)));
+                    let temp_text = format!("{}\n{}{} / {}%", info["text"].as_str().unwrap(), info["temp"], info["temp_unit"].as_str().unwrap(), info["humidity"]);
+                    info_grid.update_value("weather", &temp_text);
+                    // info_grid.update_path("weather", &format!("/home/vncnz/.config/eww/images/weather/{}", info["icon_name"].as_str().unwrap()));
+                    info_grid.update_icon("weather", info["icon"].as_str().unwrap());
+                }
+            },
+            /*
             "ratatoskr" => {
                 if data.warning == 1.0 { span = Some(Span::styled(format!("Ratatoskr disconnected"), Style::default().fg(color))); }
             },
             "display" => {},
-            "weather" => {
-                // {"icon": "", "text": "Fog", "temp": 8, "temp_real": 9, "temp_unit": "°C", "day": "0", "icon_name": "fog.svg", "sunrise": "07:15", "sunset": "16:48", "sunrise_mins": 435, "sunset_mins": 1008, "daylight": 34385.75, "locality": "Desenzano Del Garda", "humidity": 99}
-                if let Some(info) = &data.data {
-                    span = Some(Span::styled(format!("[{} {}] ", info["icon"], info["text"]), Style::default().fg(color)));
-                }
-            },*/
+            */
             _ => {
                 // span = Some(Span::styled(format!("[{}] ", data.resource), Style::default().fg(color)));
             }
