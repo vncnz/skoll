@@ -539,46 +539,20 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
                     info_grid.update_icon("weather", info["icon"].as_str().unwrap());
                 }
             },
-            "brightness" => {
-                // {"icon": "", "text": "Fog", "temp": 8, "temp_real": 9, "temp_unit": "°C", "day": "0", "icon_name": "fog.svg", "sunrise": "07:15", "sunset": "16:48", "sunrise_mins": 435, "sunset_mins": 1008, "daylight": 34385.75, "locality": "Desenzano Del Garda", "humidity": 99}
+            "display" => {
                 if let Some(info) = &data.data {
                     let temp_text = format!("{}%", info["percentage"]);
                     info_grid.update_value("brightness", &temp_text);
                     info_grid.update_icon("brightness", info["icon"].as_str().unwrap());
                 }
             },
-            /*
-            "ratatoskr" => {
+            /*"ratatoskr" => {
                 if data.warning == 1.0 { span = Some(Span::styled(format!("Ratatoskr disconnected"), Style::default().fg(color))); }
-            },
-            "display" => {},
-            */
+            }*/
             _ => {
                 // span = Some(Span::styled(format!("[{}] ", data.resource), Style::default().fg(color)));
             }
         }
-
-
-
-        /*match info {
-            SysUpdate::Weather(weather) => {
-                let temp_text = format!("{}{}", weather.temp, weather.temp_unit);
-                info_grid.update_value("weather", &temp_text);
-                info_grid.update_path("weather", &format!("/home/vncnz/.config/eww/images/weather/{}", weather.icon_name));
-            },
-            SysUpdate::Brightness(brightness) => {
-                let text = format!("{}%", brightness.percentage);
-                // let brightness_color = get_color_gradient(30.0, 60.0, brightness.percentage as f64);
-                info_grid.update_value("brightness", &text);
-                info_grid.update_icon("brightness", &*brightness.icon);
-                // info_grid.update_color("brightness", &brightness_color);
-            },
-            SysUpdate::Error(error) => {
-                println!("ERROR: {}", error);
-            }
-        }*/
-        // sysdata.loadavg = Some(info);
-        // println!("\n\n\n\n{}\n\n\n\n", sysdata.loadavg.unwrap_or_default());
         glib::Continue(true)
     });
 
@@ -588,28 +562,6 @@ for row in (&entries.borrow() as &HashMap<ListBoxRow, AppEntry>).keys() {
             std::thread::sleep(std::time::Duration::from_millis(300));
         }
     });
-
-
-    // spawn_network_monitor(sender.clone());
-
-    /*std::thread::spawn(move || {
-        // sender.send(get_disk_info()).expect("Send failed");
-        sender.send(get_weather()).expect("Send failed");
-        // sender.send(get_weather()).expect("Send failed");
-        let mut counter = 0;
-        loop {
-            // if counter % 2 == 0 { sender.send(get_load_avg()).expect("Send failed") };
-            // if counter % 2 == 0 { sender.send(get_ram_info()).expect("Send failed") };
-            // if counter % 2 == 0 { sender.send(get_sys_temperatures()).expect("Send failed") };
-            // sender.send(get_volume()).expect("Send failed");
-            sender.send(get_brightness()).expect("Send failed");
-
-            if counter % 2 == 0 { get2(sender.clone()) };
-
-            counter += 1;
-            std::thread::sleep(std::time::Duration::from_secs(2));
-        }
-    });*/
 
     window.set_child(Some(&container));
 
